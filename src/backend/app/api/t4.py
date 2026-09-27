@@ -237,6 +237,7 @@ async def create_webhook(
     return WebhookResponse(
         id=hook.id, url=hook.url, events=hook.events,
         is_active=hook.is_active, created_at=hook.created_at,
+        secret=hook.secret,
     )
 
 

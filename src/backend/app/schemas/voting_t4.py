@@ -86,6 +86,7 @@ class WebhookResponse(BaseModel):
     events: List[str]
     is_active: bool
     created_at: datetime
+    secret: Optional[str] = None  # Only returned on creation (needed to verify signatures)
 
     class Config:
         from_attributes = True
