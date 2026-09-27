@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select, func, delete as sa_delete
 from sqlalchemy.orm import selectinload
 from uuid import UUID
 from datetime import datetime
@@ -105,8 +105,11 @@ async def delete_event(
 
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
-    
-    await db.delete(event)
+
+    # Core DELETE (not ORM): every child FK is ON DELETE CASCADE at the DB
+    # level, while ORM cascades trip over composite join conditions
+    # (e.g. certificates.recipient) and abort the flush.
+    await db.execute(sa_delete(Event).where(Event.id == event.id))
     await db.commit()
 
 

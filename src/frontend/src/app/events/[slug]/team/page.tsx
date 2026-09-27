@@ -90,9 +90,11 @@ export default function TeamPage() {
 
     setJoining(true);
     try {
-      const res = await fetch(`${API_URL}/api/teams/${inviteCode}/join`, {
+      const res = await fetch(`${API_URL}/api/events/${slug}/teams/join-by-code`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
+        body: JSON.stringify({ invite_code: inviteCode.trim() }),
       });
 
       if (!res.ok) {

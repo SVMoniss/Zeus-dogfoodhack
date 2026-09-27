@@ -25,7 +25,9 @@ class User(Base, UUIDMixin, TimestampMixin):
     scores = relationship("Score", back_populates="judge", foreign_keys="Score.judge_id", cascade="all, delete-orphan")
     judge_batches = relationship("JudgeBatch", back_populates="judge", foreign_keys="JudgeBatch.judge_id", cascade="all, delete-orphan")
     api_keys = relationship("APIKey", back_populates="creator", foreign_keys="APIKey.created_by")
-    certificates = relationship("Certificate", back_populates="recipient", primaryjoin="and_(User.id==foreign(Certificate.recipient_id), Certificate.recipient_type=='user')", foreign_keys="Certificate.recipient_id")
+    # One-way: Certificate.recipient does not back-populate (a one-sided
+    # back_populates here confused the unit of work on cascaded deletes).
+    certificates = relationship("Certificate", primaryjoin="and_(User.id==foreign(Certificate.recipient_id), Certificate.recipient_type=='user')", foreign_keys="Certificate.recipient_id", viewonly=True)
     bulk_jobs = relationship("BulkJob", back_populates="creator", foreign_keys="BulkJob.created_by")
 
     def __repr__(self):

@@ -6,7 +6,6 @@ from uuid import UUID
 from datetime import datetime, timezone
 from typing import List, Optional
 from decimal import Decimal
-import statistics
 from app.core.database import get_db
 from app.core.deps import get_current_user, require_judge, require_organizer, resolve_event
 from app.models import (
@@ -25,26 +24,25 @@ router = APIRouter(prefix="/api", tags=["judging"])
 
 
 # Judging Criteria
-@router.post("/events/{event_id}/criteria", response_model=JudgingCriteriaResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/events/{event_identifier}/criteria", response_model=JudgingCriteriaResponse, status_code=status.HTTP_201_CREATED)
 async def create_criteria(
-    event_id: UUID,
+    event_identifier: str,
     criteria_data: JudgingCriteriaCreate,
     current_user: User = Depends(require_organizer),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(Event).where(Event.id == event_id))
-    event = result.scalar_one_or_none()
-    
+    event = await resolve_event(db, event_identifier)
+
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
     
     # Validate weight sum
-    existing = await db.execute(select(JudgingCriteria).where(JudgingCriteria.event_id == event_id))
+    existing = await db.execute(select(JudgingCriteria).where(JudgingCriteria.event_id == event.id))
     total_weight = sum(c.weight for c in existing.scalars()) + criteria_data.weight
     if total_weight > 100:
         raise HTTPException(status_code=400, detail="Total criteria weight cannot exceed 100%")
-    
-    criteria = JudgingCriteria(**criteria_data.model_dump(), event_id=event_id)
+
+    criteria = JudgingCriteria(**criteria_data.model_dump(), event_id=event.id)
     db.add(criteria)
     await db.commit()
     await db.refresh(criteria)
@@ -52,13 +50,16 @@ async def create_criteria(
     return criteria
 
 
-@router.get("/events/{event_id}/criteria", response_model=List[JudgingCriteriaResponse])
+@router.get("/events/{event_identifier}/criteria", response_model=List[JudgingCriteriaResponse])
 async def list_criteria(
-    event_id: UUID,
+    event_identifier: str,
     db: AsyncSession = Depends(get_db),
 ):
+    event = await resolve_event(db, event_identifier)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
     result = await db.execute(
-        select(JudgingCriteria).where(JudgingCriteria.event_id == event_id).order_by(JudgingCriteria.display_order)
+        select(JudgingCriteria).where(JudgingCriteria.event_id == event.id).order_by(JudgingCriteria.display_order)
     )
     return result.scalars().all()
 
@@ -93,16 +94,15 @@ async def update_criteria(
 
 
 # Judge Management
-@router.post("/events/{event_id}/judges/invite", status_code=status.HTTP_201_CREATED)
+@router.post("/events/{event_identifier}/judges/invite", status_code=status.HTTP_201_CREATED)
 async def invite_judge(
-    event_id: UUID,
+    event_identifier: str,
     invite_data: JudgeInvite,
     current_user: User = Depends(require_organizer),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(Event).where(Event.id == event_id))
-    event = result.scalar_one_or_none()
-    
+    event = await resolve_event(db, event_identifier)
+
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
     
@@ -120,26 +120,27 @@ async def invite_judge(
         )
         db.add(user)
         await db.flush()
-    
+        await db.commit()
+        await db.refresh(user)
+
     return {"message": "Judge invited", "judge_id": str(user.id), "email": user.email}
 
 
-@router.get("/events/{event_id}/judges", response_model=List[JudgeAssignmentResponse])
+@router.get("/events/{event_identifier}/judges", response_model=List[JudgeAssignmentResponse])
 async def list_judges(
-    event_id: UUID,
+    event_identifier: str,
     current_user: User = Depends(require_organizer),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(Event).where(Event.id == event_id))
-    event = result.scalar_one_or_none()
-    
+    event = await resolve_event(db, event_identifier)
+
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
-    
+
     query = select(JudgeAssignment).options(
         selectinload(JudgeAssignment.judge),
         selectinload(JudgeAssignment.track)
-    ).where(JudgeAssignment.event_id == event_id)
+    ).where(JudgeAssignment.event_id == event.id)
     result = await db.execute(query)
     assignments = result.scalars().all()
     
@@ -157,16 +158,15 @@ async def list_judges(
     ]
 
 
-@router.post("/events/{event_id}/judges/assign", response_model=JudgeAssignmentResponse)
+@router.post("/events/{event_identifier}/judges/assign", response_model=JudgeAssignmentResponse)
 async def assign_judge(
-    event_id: UUID,
+    event_identifier: str,
     assign_data: JudgeAssign,
     current_user: User = Depends(require_organizer),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(Event).where(Event.id == event_id))
-    event = result.scalar_one_or_none()
-    
+    event = await resolve_event(db, event_identifier)
+
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
     
@@ -178,13 +178,13 @@ async def assign_judge(
         raise HTTPException(status_code=400, detail="Invalid judge")
     
     # Check track belongs to event
-    track_result = await db.execute(select(Track).where(Track.id == assign_data.track_id, Track.event_id == event_id))
+    track_result = await db.execute(select(Track).where(Track.id == assign_data.track_id, Track.event_id == event.id))
     track = track_result.scalar_one_or_none()
     if not track:
         raise HTTPException(status_code=400, detail="Invalid track for this event")
-    
+
     assignment = JudgeAssignment(
-        event_id=event_id,
+        event_id=event.id,
         judge_id=assign_data.judge_id,
         track_id=assign_data.track_id,
         assigned_by=current_user.id,
@@ -491,14 +491,37 @@ async def export_csv(
         for c in criteria_list:
             header.append(c.name)
         header.append("Total Weighted")
+        header.append("Normalized Total")
+        header.append("Rank")
         writer.writerow(header)
-        
+
+        # Cross-judge normalized totals + ranks (z-score per JUDGING.md)
+        from app.services import normalization as norm_svc
+
+        svc_scores = []
+        for project in projects:
+            for s in project.scores:
+                svc_scores.append(
+                    {
+                        "judge_id": str(s.judge_id),
+                        "project_id": str(project.id),
+                        "criteria": s.criteria.name if s.criteria else "",
+                        "score": s.score,
+                    }
+                )
+        weights = {c.name: float(c.weight) for c in criteria_list}
+        norm_totals = {
+            pid: v["normalized_total"]
+            for pid, v in norm_svc.normalize_project_scores(svc_scores, weights).items()
+        }
+        ranks = norm_svc.rank_totals(norm_totals)
+
         # Data rows
         for project in projects:
             row = [project.title, project.team.name if project.team else "", project.track.name if project.track else ""]
             total_weighted = 0
             total_weight = 0
-            
+
             for criteria in criteria_list:
                 # Get average score for this criteria across all judges
                 criteria_scores = [s.score for s in project.scores if s.criteria_id == criteria.id]
@@ -510,12 +533,20 @@ async def export_csv(
                     row.append(f"{avg_score:.2f}")
                 else:
                     row.append("")
-            
+
             if total_weight > 0:
                 row.append(f"{total_weighted / total_weight:.2f}")
             else:
                 row.append("")
-            
+
+            pid = str(project.id)
+            if pid in norm_totals:
+                row.append(f"{norm_totals[pid]:.2f}")
+                row.append(str(ranks[pid]))
+            else:
+                row.append("")
+                row.append("")
+
             writer.writerow(row)
         
         output.seek(0)
@@ -548,13 +579,17 @@ async def get_normalization_report(
     scores_result = await db.execute(select(Score).where(Score.event_id == event_id))
     scores = scores_result.scalars().all()
     
-    # Group by judge and criteria
+    # Group by judge and criteria (+ global per-criteria pools)
     judge_criteria_scores = {}
+    per_criteria_all = {}
     for score in scores:
         key = (score.judge_id, score.criteria_id)
         if key not in judge_criteria_scores:
             judge_criteria_scores[key] = []
         judge_criteria_scores[key].append(score.score)
+        if score.criteria_id not in per_criteria_all:
+            per_criteria_all[score.criteria_id] = []
+        per_criteria_all[score.criteria_id].append(score.score)
     
     # Get judge info
     judge_ids = set(k[0] for k in judge_criteria_scores.keys())
@@ -566,27 +601,39 @@ async def get_normalization_report(
     criteria_result = await db.execute(select(JudgingCriteria).where(JudgingCriteria.id.in_(criteria_ids)))
     criteria_map = {c.id: c for c in criteria_result.scalars()}
     
+    from collections import defaultdict
+    from app.services import normalization as norm_svc
+
+    global_stats = {
+        cid: norm_svc.judge_stats(vals)
+        for cid, vals in per_criteria_all.items()
+    }
+
     reports = []
     for (judge_id, criteria_id), values in judge_criteria_scores.items():
-        if len(values) < 2:
-            continue
-        
         judge = judges.get(judge_id)
         criteria = criteria_map.get(criteria_id)
-        
+
         if not judge or not criteria:
             continue
-        
-        mean = statistics.mean(values)
-        stdev = statistics.stdev(values)
-        
+
+        # Single-score judges are included: stdev 0.0 normalizes to raw.
+        mean, stdev = norm_svc.judge_stats(values)
+        gmean, gstdev = global_stats.get(criteria_id, (mean, 0.0))
+        per_project = {}
+        for score in scores:
+            if score.judge_id == judge_id and score.criteria_id == criteria_id:
+                per_project[str(score.project_id)] = norm_svc.normalize_value(
+                    score.score, mean, stdev, gmean, gstdev
+                )
+
         reports.append(NormalizationReport(
             judge_id=judge_id,
             judge_name=judge.full_name or judge.email,
             raw_scores={criteria.name: values},
             mean=mean,
             std=stdev,
-            normalized_scores={},  # Would need project-level calculation
+            normalized_scores=per_project,
         ))
-    
+
     return reports

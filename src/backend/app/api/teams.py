@@ -38,6 +38,59 @@ async def list_teams(
     return teams
 
 
+class MyTeamResponse(TeamResponse):
+    members: List[TeamMemberResponse] = []
+
+
+@router.get("/my", response_model=MyTeamResponse)
+async def get_my_team(
+    event_identifier: str,
+    current_user: User = Depends(require_participant),
+    db: AsyncSession = Depends(get_db),
+):
+    """The current user's team in this event (T1 team formation UI)."""
+    event = await resolve_event(db, event_identifier)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    result = await db.execute(
+        select(Team)
+        .join(TeamMember)
+        .where(Team.event_id == event.id, TeamMember.user_id == current_user.id)
+    )
+    team = result.scalar_one_or_none()
+    if not team:
+        raise HTTPException(status_code=404, detail="No team in this event")
+    members_result = await db.execute(
+        select(TeamMember, User).join(User).where(TeamMember.team_id == team.id)
+    )
+    members = [
+        TeamMemberResponse(
+            id=m.TeamMember.id,
+            team_id=m.TeamMember.team_id,
+            user_id=m.User.id,
+            user_email=m.User.email,
+            user_name=m.User.full_name,
+            # TeamMember tracks created_at (TimestampMixin); exposed as joined_at
+            joined_at=m.TeamMember.created_at,
+        )
+        for m in members_result.all()
+    ]
+    member_count = await db.execute(
+        select(func.count(TeamMember.id)).where(TeamMember.team_id == team.id)
+    )
+    return MyTeamResponse(
+        id=team.id,
+        event_id=team.event_id,
+        name=team.name,
+        max_members=team.max_members,
+        invite_code=team.invite_code,
+        created_by=team.created_by,
+        created_at=team.created_at,
+        member_count=member_count.scalar() or 0,
+        members=members,
+    )
+
+
 @router.get("/{team_id}", response_model=TeamResponse)
 async def get_team(
     event_identifier: str,
@@ -306,7 +359,8 @@ async def list_team_members(
             user_id=m.User.id,
             user_email=m.User.email,
             user_name=m.User.full_name,
-            joined_at=m.TeamMember.joined_at,
+            # TeamMember tracks created_at (TimestampMixin); exposed as joined_at
+            joined_at=m.TeamMember.created_at,
         )
         for m in members
     ]

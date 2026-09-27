@@ -19,6 +19,7 @@ export interface Event {
   voting_close_at: string | null;
   results_published_at: string | null;
   is_active: boolean;
+  prizes?: Array<{ place?: string; title: string; amount?: string }>;
   created_by: string;
   created_at: string;
   updated_at: string;
