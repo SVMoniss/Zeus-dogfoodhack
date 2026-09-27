@@ -34,10 +34,82 @@ export default function OrganizerDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [accessDenied, setAccessDenied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tracks, setTracks] = useState<Array<{ id: string; name: string }>>([]);
+  const [criteria, setCriteria] = useState<Array<{ id: string; name: string; weight: number }>>([]);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [assignTrackId, setAssignTrackId] = useState('');
+  const [critName, setCritName] = useState('');
+  const [critWeight, setCritWeight] = useState('20');
+  const [notice, setNotice] = useState('');
 
   useEffect(() => {
     fetchDashboard();
+    fetchManage();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
+
+  const fetchManage = async () => {
+    try {
+      const [tRes, cRes] = await Promise.all([
+        fetch(`${API_URL}/api/events/${slug}/tracks`, { credentials: 'include' }),
+        fetch(`${API_URL}/api/events/${slug}/criteria`, { credentials: 'include' }),
+      ]);
+      if (tRes.ok) setTracks(await tRes.json());
+      if (cRes.ok) setCriteria(await cRes.json());
+    } catch {
+      /* management lists are best-effort */
+    }
+  };
+
+  const inviteAndAssign = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setNotice('');
+    try {
+      const iRes = await fetch(`${API_URL}/api/events/${slug}/judges/invite`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email: inviteEmail.trim() }),
+      });
+      const invited = await iRes.json();
+      if (!iRes.ok) throw new Error(invited.detail || 'Invite failed');
+      if (assignTrackId) {
+        const aRes = await fetch(`${API_URL}/api/events/${slug}/judges/assign`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ judge_id: invited.judge_id, track_id: assignTrackId }),
+        });
+        const assigned = await aRes.json();
+        if (!aRes.ok) throw new Error(assigned.detail || 'Assign failed');
+      }
+      setInviteEmail('');
+      fetchDashboard();
+      setNotice('Judge invited' + (assignTrackId ? ' and assigned.' : '.'));
+    } catch (err: any) {
+      setNotice(err.message || 'Invite failed');
+    }
+  };
+
+  const addCriteria = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setNotice('');
+    try {
+      const res = await fetch(`${API_URL}/api/events/${slug}/criteria`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name: critName.trim(), weight: Number(critWeight) }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Criteria creation failed');
+      setCritName('');
+      fetchManage();
+      setNotice('Rubric criteria added.');
+    } catch (err: any) {
+      setNotice(err.message || 'Criteria creation failed');
+    }
+  };
 
   const fetchDashboard = async () => {
     try {
@@ -126,6 +198,9 @@ export default function OrganizerDashboardPage() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              <button onClick={() => router.push(`/events/${slug}/organizer/integrations`)} className="btn-secondary">
+                Integrations
+              </button>
               <button onClick={handleLogout} className="btn-secondary flex items-center gap-2">
                 <LogOut className="h-4 w-4" />
                 Logout
@@ -231,6 +306,50 @@ export default function OrganizerDashboardPage() {
               </tbody>
             </table>
           </div>
+        </div>
+
+        {/* Judges & Rubric */}
+        <div className="card">
+          <h2 className="text-xl font-bold mb-4">Judges & Rubric</h2>
+          {notice && <p className="text-sm text-gray-600 mb-4">{notice}</p>}
+          <form onSubmit={inviteAndAssign} className="grid md:grid-cols-3 gap-3 mb-6">
+            <input
+              type="email"
+              required
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              className="input"
+              placeholder="judge@example.org"
+            />
+            <select value={assignTrackId} onChange={(e) => setAssignTrackId(e.target.value)} className="input">
+              <option value="">No track assignment</option>
+              {tracks.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+            <button type="submit" className="btn-primary">Invite & Assign</button>
+          </form>
+          <form onSubmit={addCriteria} className="grid md:grid-cols-3 gap-3 mb-4">
+            <input
+              value={critName}
+              onChange={(e) => setCritName(e.target.value)}
+              className="input"
+              placeholder="Criteria name"
+              required
+            />
+            <input
+              type="number"
+              min={0}
+              max={100}
+              value={critWeight}
+              onChange={(e) => setCritWeight(e.target.value)}
+              className="input"
+              placeholder="Weight %"
+              required
+            />
+            <button type="submit" className="btn-secondary">Add Criteria</button>
+          </form>
+          <p className="text-sm text-gray-500">
+            Rubric: {criteria.length === 0 ? 'none yet' : criteria.map((c) => `${c.name} ${c.weight}%`).join(' · ')}
+          </p>
         </div>
 
         {/* By Judge */}

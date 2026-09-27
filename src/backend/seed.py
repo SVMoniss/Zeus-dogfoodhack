@@ -113,23 +113,30 @@ async def seed():
         
         user_map = {}
         for key, data in test_users.items():
-            # Delete existing user with this email to avoid unique constraint violation
             existing = await db.execute(select(User).where(User.email == data["email"]))
             existing_user = existing.scalar_one_or_none()
             if existing_user:
-                await db.delete(existing_user)
-                await db.flush()
-            
-            user = User(
-                id=data["id"],
-                email=data["email"],
-                password_hash=pwd_context.hash(data["password"]),
-                full_name=data["full_name"],
-                role=data["role"],
-            )
-            db.add(user)
-            user_map[key] = user
-            print(f"  Created user: {data['email']} (role: {data['role'].value})")
+                # Update in place: NEVER delete test users. Scores, judge
+                # assignments and certificates FK-reference them, and deleting
+                # nullifies those FKs, crashing the seed on NOT NULL constraints.
+                existing_user.password_hash = pwd_context.hash(data["password"])
+                existing_user.full_name = data["full_name"]
+                existing_user.role = data["role"]
+                if str(existing_user.id) != str(data["id"]):
+                    print(f"  WARNING: {data['email']} has id {existing_user.id}, expected {data['id']} - .dogfood.toml tokens may mismatch")
+                user_map[key] = existing_user
+                print(f"  Updated user: {data['email']} (role: {data['role'].value})")
+            else:
+                user = User(
+                    id=data["id"],
+                    email=data["email"],
+                    password_hash=pwd_context.hash(data["password"]),
+                    full_name=data["full_name"],
+                    role=data["role"],
+                )
+                db.add(user)
+                user_map[key] = user
+                print(f"  Created user: {data['email']} (role: {data['role'].value})")
         
         await db.commit()
         
@@ -163,6 +170,11 @@ async def seed():
             event.created_by = user_map["organizer"].id
             print("Created event")
         else:
+            # Backfill columns added after the event row was first created
+            if event.created_by is None:
+                event.created_by = user_map["organizer"].id
+            if getattr(event, "prizes", None) is None:
+                event.prizes = []
             print("Event already exists")
         
         await db.flush()
@@ -221,6 +233,9 @@ async def seed():
                 team.name = team_data["name"]
                 team.invite_code = uuid.uuid4().hex[:8].upper()
                 team.max_members = 4
+                team.created_by = user_map["organizer"].id
+            elif team.created_by is None:
+                # Backfill rows created before created_by was populated
                 team.created_by = user_map["organizer"].id
             
             team_map[team_data["id"]] = team

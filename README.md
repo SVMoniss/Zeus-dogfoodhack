@@ -14,26 +14,32 @@ A submission and judging platform for hackathons, built for the DOGFOOD 2026 hac
 - **Public Gallery**: Search, filter by track, pagination, no auth required
 
 ### T2 - Judging System ✅
-- **Judge Invitation & Assignment**: Email invites, track-based assignments
-- **Weighted Scoring Rubric**: Configurable criteria with weights (must sum to 100%)
+- **Judge Invitation & Assignment**: Email invites, track-based assignments (dashboard UI included)
+- **Weighted Scoring Rubric**: Configurable criteria, frozen at exactly 100% before judging
 - **Backend-Enforced Isolation**: Judges can ONLY see their own scores (critical checker requirement)
+- **Self-review & Conflict Exclusion**: Judges cannot score their own team or conflicted projects
 - **Progress Dashboard**: Real-time organizer view of judging progress
 - **Cross-Judge Normalization**: Z-score normalization per judge (documented in JUDGING.md)
-- **CSV Export**: Results export with raw and normalized scores
+- **Multi-method Ranks**: Raw, calibrated, Bradley-Terry, Borda + ROBUST/FRAGILE boundary verdict
+- **Team Receipts**: Per-team averages, anonymized feedback, ranks per method
+- **Mutation Audit Trail**: Every sensitive change logged for organizers
+- **CSV Export**: Results (raw + normalized + ranks), assignments, reviews, audit
 
-### T3 - Public Voting (Planned)
-- Email-gated voting tokens
-- Randomized ballot ordering
-- Hidden results during voting
-- Anti-abuse measures (rate limiting, audit trail)
+### T3 - Public Voting ✅
+- **Email-gated voting tokens** (`POST /api/events/{id}/voting/token`, 5/hour per email)
+- **Randomized ballot ordering** (deterministic per-token shuffle — fair order, stable reloads)
+- **Hidden results during voting** (organizers always see; public only after `results_published_at`)
+- **Project comments** with moderation queue (organizer approve flow)
+- **Anti-abuse**: per-IP vote rate limits, duplicate detection via unique constraint, full `vote_audit_log` trail readable by organizers
 
-### T4 - Stretch Features (Planned)
-- REST API with OpenAPI docs
-- Webhooks with retry & signatures
-- Verifiable certificates (Ed25519)
-- Embeddable gallery widget
-- Bulk import/export
-- Semantic search (pgvector)
+### T4 - Stretch Features ✅
+- **REST API with OpenAPI docs** (`/api/v1/...` keyed by `X-API-Key`, interactive docs at `/docs`)
+- **API keys** with hashed storage, prefix display, expiry and revocation
+- **Webhooks** with HMAC-SHA256 signatures, 3 delivery attempts, fired on submit/score events
+- **Verifiable certificates** (Ed25519-signed, publicly checkable at `/certificates/verify`)
+- **Embeddable gallery widget** (`/api/events/{slug}/widget.js`)
+- **Bulk import/export** (full JSON dump + import with per-record error log and job tracking)
+- Semantic search (pgvector) (Planned)
 
 ## Tech Stack
 
@@ -97,25 +103,28 @@ dogfoodhack/
 │   │   ├── Dockerfile.seed         # Seed service container
 │   │   ├── pyproject.toml          # Python dependencies
 │   │   ├── seed.py                 # Fixture loader
+│   │   ├── alembic/versions/       # DB migrations
 │   │   └── app/
 │   │       ├── main.py             # FastAPI entry point
 │   │       ├── core/               # Config, security, database
 │   │       ├── models/             # SQLAlchemy models
 │   │       ├── schemas/            # Pydantic schemas
-│   │       ├── api/                # API routes
-│   │       └── services/           # Business logic
+│   │       ├── api/                # auth/events/teams/projects/judging/voting/t4
+│   │       └── services/           # Webhook delivery, certificate signing
 │   └── frontend/
 │       ├── Dockerfile              # Frontend container
 │       ├── package.json            # Node dependencies
 │       ├── next.config.js          # Next.js config
 │       ├── tailwind.config.js      # Tailwind config
 │       └── src/
-│           ├── app/                # Next.js App Router pages
-│           ├── components/         # React components
+│           ├── app/                # gallery/vote/project detail/judge/
+│           │                       # organizer dashboard/export/integrations,
+│           │                       # certificates verify
 │           ├── lib/                # Utilities (auth, api)
 │           └── types/              # TypeScript types
 └── tests/                      # Own test suite, beyond the acceptance one
-    └── e2e/                    # Playwright E2E specs
+    └── e2e/                    # Playwright specs: auth/gallery/submission/
+                                # judge/csv/demo-lifecycle/t3-voting/t4-integrations
 ```
 
 ## Development
@@ -171,6 +180,7 @@ python3 run.py .dogfood.toml > acceptance-report.txt
 - [ARCHITECTURE.md](ARCHITECTURE.md) - System design and rationale
 - [DATA-MODEL.md](DATA-MODEL.md) - Database schema and migrations
 - [JUDGING.md](JUDGING.md) - Judging algorithms, normalization, audit trail
+- [THREAT-MODEL.md](THREAT-MODEL.md) - Threats, mitigations, accepted risks
 
 ## License
 

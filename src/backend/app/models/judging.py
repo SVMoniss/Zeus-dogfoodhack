@@ -55,6 +55,7 @@ class Score(Base, UUIDMixin, TimestampMixin):
     criteria_id = Column(UUID(as_uuid=True), ForeignKey("judging_criteria.id", ondelete="CASCADE"), nullable=False, index=True)
     score = Column(Integer, nullable=False)
     comment = Column(Text)
+    submitted_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     # Relationships
     event = relationship("Event", back_populates="scores", foreign_keys="Score.event_id")

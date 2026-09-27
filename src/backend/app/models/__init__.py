@@ -29,6 +29,8 @@ from app.models.extensions import (
     Webhook,
     Certificate,
     BulkJob,
+    AuditEvent,
+    Conflict,
     ProjectEmbedding,
 )
 
@@ -59,5 +61,7 @@ __all__ = [
     "Webhook",
     "Certificate",
     "BulkJob",
+    "AuditEvent",
+    "Conflict",
     "ProjectEmbedding",
 ]

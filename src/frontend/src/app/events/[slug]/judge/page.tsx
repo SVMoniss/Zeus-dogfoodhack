@@ -91,7 +91,8 @@ export default function JudgePage() {
     );
   }
 
-  if (accessDenied || !user) {
+  const canJudge = user && ['judge', 'organizer', 'admin'].includes(user.role);
+  if (accessDenied || !user || !canJudge) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">

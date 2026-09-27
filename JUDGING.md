@@ -107,6 +107,19 @@ Project_Normalized_Total = Σ(weightᵢ × Normalized_Score(project, criteriaᵢ
 1. Sort projects by `Project_Normalized_Total` descending
 2. Assign ranks: 1, 2, 3... (ties get same rank, next rank skips)
 
+## Multi-Method Ranking Comparison
+
+Beyond raw and calibrated averages the portal computes two further views
+over the same submitted scores (`GET /api/events/{id}/ranking`, organizer):
+
+- **Bradley-Terry**: MM-estimated latent strengths from pairwise comparisons
+  derived per judge (ties skipped; warns on disconnected graphs).
+- **Borda**: per-judge ranking points with fractional points for ties.
+
+A prize boundary (top-k set, default k=3) is **ROBUST** when every method
+agrees on the set above the line, else **FRAGILE** with the disagreeing
+methods named. With no scored projects the verdict is FRAGILE.
+
 ## CSV Export Format
 
 The organizer can download results as CSV with columns:

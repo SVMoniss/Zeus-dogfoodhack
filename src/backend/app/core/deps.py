@@ -1,4 +1,5 @@
 from typing import Optional
+from uuid import UUID
 from fastapi import Depends, HTTPException, status, Request, Cookie
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -6,8 +7,22 @@ from jose import jwt
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import decode_token
-from app.models import User
+from app.models import User, Event
 from app.models.enums import UserRole
+
+
+async def resolve_event(db: AsyncSession, identifier: str) -> Optional[Event]:
+    """Resolve an event by UUID or slug.
+
+    The frontend addresses events by slug in page URLs, so all
+    event-scoped endpoints accept either form (same as projects).
+    """
+    try:
+        event_id = UUID(identifier)
+        result = await db.execute(select(Event).where(Event.id == event_id))
+    except ValueError:
+        result = await db.execute(select(Event).where(Event.slug == identifier))
+    return result.scalar_one_or_none()
 
 
 async def get_current_user(

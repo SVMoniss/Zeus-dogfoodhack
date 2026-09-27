@@ -89,10 +89,16 @@ export default function GalleryPage() {
               </Link>
               <div>
                 <h1 className="text-xl font-bold text-gray-900">{event.name}</h1>
-                <p className="text-sm text-gray-500">{event.slug}</p>
+                <p className="text-sm text-gray-500">
+                  {event.slug}
+                  {event.prizes && event.prizes.length > 0 && (
+                    <> · Prizes: {event.prizes.map((p) => p.title).join(', ')}</>
+                  )}
+                </p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              <Link href={`/events/${slug}/vote`} className="btn-primary">Community Vote</Link>
               {user && (
                 <button onClick={handleLogout} className="btn-secondary flex items-center gap-2">
                   <LogOut className="h-4 w-4" />

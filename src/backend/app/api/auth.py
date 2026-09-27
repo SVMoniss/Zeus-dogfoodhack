@@ -12,6 +12,29 @@ from app.schemas.auth import UserRegister, UserLogin, Token, UserResponse, UserM
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
+# Login brute-force guard (single-process scope, documented in
+# THREAT-MODEL.md; a shared store would be needed for multi-worker deploys).
+# 100/min per (client IP, email): bcrypt verification (~100ms+) already
+# bounds attackers to a few hundred guesses per minute per core; the cap
+# stops naive floods while staying clear of legitimate bursts (including
+# this repo's own parallel e2e suite).
+_LOGIN_ATTEMPTS: dict = {}
+LOGIN_LIMIT = 100
+LOGIN_WINDOW_SECONDS = 60
+
+
+def _login_allowed(key: str) -> bool:
+    import time
+
+    now = time.time()
+    hits = [t for t in _LOGIN_ATTEMPTS.get(key, []) if now - t < LOGIN_WINDOW_SECONDS]
+    if len(hits) >= LOGIN_LIMIT:
+        _LOGIN_ATTEMPTS[key] = hits
+        return False
+    hits.append(now)
+    _LOGIN_ATTEMPTS[key] = hits
+    return True
+
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register(user_data: UserRegister, db: AsyncSession = Depends(get_db)):
@@ -36,7 +59,15 @@ async def register(user_data: UserRegister, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/login", response_model=Token)
-async def login(response: Response, credentials: UserLogin, db: AsyncSession = Depends(get_db)):
+async def login(
+    response: Response,
+    request: Request,
+    credentials: UserLogin,
+    db: AsyncSession = Depends(get_db),
+):
+    client = request.client.host if request.client else "unknown"
+    if not _login_allowed(f"{client}:{credentials.email.strip().lower()}"):
+        raise HTTPException(status_code=429, detail="Too many login attempts, try later")
     result = await db.execute(select(User).where(User.email == credentials.email))
     user = result.scalar_one_or_none()
     

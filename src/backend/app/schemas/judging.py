@@ -109,3 +109,21 @@ class NormalizationReport(BaseModel):
     mean: float
     std: float
     normalized_scores: dict  # project_id -> normalized_score
+
+
+class ConflictCreate(BaseModel):
+    judge_id: Optional[UUID] = None  # defaults to self for judges
+    project_id: UUID
+    reason: Optional[str] = Field(None, max_length=500)
+
+
+class ConflictResponse(BaseModel):
+    id: UUID
+    event_id: UUID
+    judge_id: UUID
+    project_id: UUID
+    reason: Optional[str]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
