@@ -93,6 +93,7 @@ export default function GalleryPage() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              <Link href={`/events/${slug}/vote`} className="btn-primary">Community Vote</Link>
               {user && (
                 <button onClick={handleLogout} className="btn-secondary flex items-center gap-2">
                   <LogOut className="h-4 w-4" />

@@ -28,12 +28,16 @@ DOGFOOD 2026 is a self-hostable hackathon submission and judging platform built 
 ### FastAPI Backend (API Layer)
 - **Role**: Business logic, authentication, API endpoints
 - **Technology**: FastAPI with async SQLAlchemy 2.0
+- **Routers**: `auth`, `events`, `teams`, `projects`, `judging` (T1/T2),
+  `voting` (T3: tokens, ballots, results gating, comments, audit),
+  `t4` (API keys, v1 REST, webhooks, certificates, widget, bulk)
 - **Key Features**:
   - Async request handling for high concurrency
   - Automatic OpenAPI/Swagger documentation
   - Pydantic validation for request/response
   - Dependency injection for clean separation
-  - JWT authentication with httpOnly cookies
+  - JWT authentication with httpOnly cookies, plus `X-API-Key` for v1 REST
+  - BackgroundTasks for non-blocking webhook delivery
 
 ### Next.js Frontend (Presentation Layer)
 - **Role**: User interface, state management, API consumption

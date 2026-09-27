@@ -205,11 +205,11 @@
 |--------|------|-------------|-------------|
 | id | UUID | PK, default gen_random_uuid() | |
 | event_id | UUID | FK → events.id, CASCADE, INDEX | |
-| project_id | UUID | FK → projects.id, CASCADE, INDEX | |
+| project_id | UUID | FK → projects.id, CASCADE, INDEX, NULLABLE | NULL on email-gated ballot token rows |
 | voter_email | VARCHAR(255) | NOT NULL | Voter identifier |
 | voter_ip | INET | | For abuse detection |
-| vote_token | UUID | UNIQUE, DEFAULT gen_random_uuid() | Single-use token |
-| score | INTEGER | NOT NULL | Vote value (1-5) |
+| vote_token | UUID | UNIQUE, DEFAULT gen_random_uuid() | Ballot token (token rows) / receipt (vote rows) |
+| score | INTEGER | NULLABLE | Vote value (1-5); NULL until cast |
 | created_at | TIMESTAMPTZ | DEFAULT NOW() | |
 | **UNIQUE** | (event_id, project_id, voter_email) | | One vote per person |
 
@@ -231,7 +231,7 @@
 |--------|------|-------------|-------------|
 | id | UUID | PK, default gen_random_uuid() | |
 | event_id | UUID | FK → events.id, CASCADE, INDEX | |
-| project_id | UUID | FK → projects.id, CASCADE, INDEX | |
+| project_id | UUID | FK → projects.id, CASCADE, INDEX, NULLABLE | NULL on event-level entries (token issued, rate limited) |
 | action | VARCHAR(50) | NOT NULL | vote_cast/rejected/rate_limited/duplicate |
 | voter_ip | INET | | |
 | voter_email | VARCHAR(255) | | |

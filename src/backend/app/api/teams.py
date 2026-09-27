@@ -6,26 +6,25 @@ from uuid import UUID
 from datetime import datetime
 from typing import List
 from app.core.database import get_db
-from app.core.deps import get_current_user, require_participant
+from app.core.deps import get_current_user, require_participant, resolve_event
 from app.models import Team, TeamMember, User, Event
 from app.models.enums import UserRole
 from app.schemas.team_project import TeamCreate, TeamJoin, TeamResponse, TeamMemberResponse
 
-router = APIRouter(prefix="/api/events/{event_id}/teams", tags=["teams"])
+router = APIRouter(prefix="/api/events/{event_identifier}/teams", tags=["teams"])
 
 
 @router.get("", response_model=List[TeamResponse])
 async def list_teams(
-    event_id: UUID,
+    event_identifier: str,
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(Event).where(Event.id == event_id))
-    event = result.scalar_one_or_none()
-    
+    event = await resolve_event(db, event_identifier)
+
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
-    
-    query = select(Team).where(Team.event_id == event_id)
+
+    query = select(Team).where(Team.event_id == event.id)
     result = await db.execute(query)
     teams = result.scalars().all()
     
@@ -41,11 +40,14 @@ async def list_teams(
 
 @router.get("/{team_id}", response_model=TeamResponse)
 async def get_team(
-    event_id: UUID,
+    event_identifier: str,
     team_id: UUID,
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(Team).where(Team.id == team_id, Team.event_id == event_id))
+    event = await resolve_event(db, event_identifier)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    result = await db.execute(select(Team).where(Team.id == team_id, Team.event_id == event.id))
     team = result.scalar_one_or_none()
     
     if not team:
@@ -61,32 +63,31 @@ async def get_team(
 
 @router.post("", response_model=TeamResponse, status_code=status.HTTP_201_CREATED)
 async def create_team(
-    event_id: UUID,
+    event_identifier: str,
     team_data: TeamCreate,
     current_user: User = Depends(require_participant),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(Event).where(Event.id == event_id))
-    event = result.scalar_one_or_none()
-    
+    event = await resolve_event(db, event_identifier)
+
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
-    
+
     # Check if user already has a team in this event
     existing = await db.execute(
         select(Team)
         .join(TeamMember)
-        .where(Team.event_id == event_id, TeamMember.user_id == current_user.id)
+        .where(Team.event_id == event.id, TeamMember.user_id == current_user.id)
     )
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Already in a team for this event")
-    
+
     import uuid as uuid_lib
     invite_code = uuid_lib.uuid4().hex[:8].upper()
-    
+
     team = Team(
         **team_data.model_dump(),
-        event_id=event_id,
+        event_id=event.id,
         invite_code=invite_code,
         created_by=current_user.id,
     )
@@ -106,13 +107,16 @@ async def create_team(
 
 @router.post("/{team_id}/join", response_model=TeamResponse)
 async def join_team(
-    event_id: UUID,
+    event_identifier: str,
     team_id: UUID,
     join_data: TeamJoin,
     current_user: User = Depends(require_participant),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(Team).where(Team.id == team_id, Team.event_id == event_id))
+    event = await resolve_event(db, event_identifier)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    result = await db.execute(select(Team).where(Team.id == team_id, Team.event_id == event.id))
     team = result.scalar_one_or_none()
     
     if not team:
@@ -125,38 +129,41 @@ async def join_team(
     existing = await db.execute(
         select(Team)
         .join(TeamMember)
-        .where(Team.event_id == event_id, TeamMember.user_id == current_user.id)
+        .where(Team.event_id == event.id, TeamMember.user_id == current_user.id)
     )
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Already in a team for this event")
-    
+
     # Check team capacity
     member_count = await db.execute(
         select(func.count(TeamMember.id)).where(TeamMember.team_id == team.id)
     )
     if member_count.scalar() >= team.max_members:
         raise HTTPException(status_code=400, detail="Team is full")
-    
+
     member = TeamMember(team_id=team.id, user_id=current_user.id)
     db.add(member)
     await db.commit()
     await db.refresh(team)
     team.member_count = member_count.scalar() + 1
-    
+
     return team
 
 
 @router.get("/by-code/{invite_code}", response_model=TeamResponse)
 async def get_team_by_invite_code(
-    event_id: UUID,
+    event_identifier: str,
     invite_code: str,
     current_user: User = Depends(require_participant),
     db: AsyncSession = Depends(get_db),
 ):
     """Resolve a team from its invite link code (T1: team formation by invite link)."""
+    event = await resolve_event(db, event_identifier)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
     result = await db.execute(
         select(Team).where(
-            Team.event_id == event_id,
+            Team.event_id == event.id,
             Team.invite_code == invite_code.upper().strip(),
         )
     )
@@ -166,7 +173,7 @@ async def get_team_by_invite_code(
         # Fall back to case-sensitive match for legacy codes
         result = await db.execute(
             select(Team).where(
-                Team.event_id == event_id, Team.invite_code == invite_code
+                Team.event_id == event.id, Team.invite_code == invite_code
             )
         )
         team = result.scalar_one_or_none()
@@ -184,22 +191,25 @@ async def get_team_by_invite_code(
 
 @router.post("/join-by-code", response_model=TeamResponse)
 async def join_team_by_invite_code(
-    event_id: UUID,
+    event_identifier: str,
     join_data: TeamJoin,
     current_user: User = Depends(require_participant),
     db: AsyncSession = Depends(get_db),
 ):
     """Join a team using only its invite link code (T1: team formation by invite link)."""
+    event = await resolve_event(db, event_identifier)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
     code = join_data.invite_code.upper().strip()
     result = await db.execute(
-        select(Team).where(Team.event_id == event_id, Team.invite_code == code)
+        select(Team).where(Team.event_id == event.id, Team.invite_code == code)
     )
     team = result.scalar_one_or_none()
 
     if not team:
         result = await db.execute(
             select(Team).where(
-                Team.event_id == event_id, Team.invite_code == join_data.invite_code
+                Team.event_id == event.id, Team.invite_code == join_data.invite_code
             )
         )
         team = result.scalar_one_or_none()
@@ -211,7 +221,7 @@ async def join_team_by_invite_code(
     existing = await db.execute(
         select(Team)
         .join(TeamMember)
-        .where(Team.event_id == event_id, TeamMember.user_id == current_user.id)
+        .where(Team.event_id == event.id, TeamMember.user_id == current_user.id)
     )
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Already in a team for this event")
@@ -234,12 +244,15 @@ async def join_team_by_invite_code(
 
 @router.post("/{team_id}/leave", response_model=TeamResponse)
 async def leave_team(
-    event_id: UUID,
+    event_identifier: str,
     team_id: UUID,
     current_user: User = Depends(require_participant),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(Team).where(Team.id == team_id, Team.event_id == event_id))
+    event = await resolve_event(db, event_identifier)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    result = await db.execute(select(Team).where(Team.id == team_id, Team.event_id == event.id))
     team = result.scalar_one_or_none()
     
     if not team:
@@ -269,11 +282,14 @@ async def leave_team(
 
 @router.get("/{team_id}/members", response_model=List[TeamMemberResponse])
 async def list_team_members(
-    event_id: UUID,
+    event_identifier: str,
     team_id: UUID,
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(Team).where(Team.id == team_id, Team.event_id == event_id))
+    event = await resolve_event(db, event_identifier)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    result = await db.execute(select(Team).where(Team.id == team_id, Team.event_id == event.id))
     team = result.scalar_one_or_none()
     
     if not team:

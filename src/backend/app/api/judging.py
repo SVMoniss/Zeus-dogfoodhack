@@ -1,14 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 from sqlalchemy.orm import selectinload
 from uuid import UUID
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 from decimal import Decimal
 import statistics
 from app.core.database import get_db
-from app.core.deps import get_current_user, require_judge, require_organizer
+from app.core.deps import get_current_user, require_judge, require_organizer, resolve_event
 from app.models import (
     JudgingCriteria, JudgeAssignment, Score, JudgeBatch, Project, User, Event, Track
 )
@@ -19,6 +19,7 @@ from app.schemas.judging import (
     ScoreCreate, ScoreSubmit, ScoreResponse,
     ProjectScoreSummary, ProgressDashboard, NormalizationReport
 )
+from app.api.t4 import notify
 
 router = APIRouter(prefix="/api", tags=["judging"])
 
@@ -177,8 +178,9 @@ async def assign_judge(
         raise HTTPException(status_code=400, detail="Invalid judge")
     
     # Check track belongs to event
-    result = await db.execute(select(Track).where(Track.id == assign_data.track_id, Track.event_id == event_id))
-    if not result.scalar_one_or_none():
+    track_result = await db.execute(select(Track).where(Track.id == assign_data.track_id, Track.event_id == event_id))
+    track = track_result.scalar_one_or_none()
+    if not track:
         raise HTTPException(status_code=400, detail="Invalid track for this event")
     
     assignment = JudgeAssignment(
@@ -198,7 +200,7 @@ async def assign_judge(
         track_id=assignment.track_id,
         judge_name=judge.full_name,
         judge_email=judge.email,
-        track_name=result.scalar_one().name,
+        track_name=track.name,
     )
 
 
@@ -249,10 +251,11 @@ async def get_judge_scores(
     return scores
 
 
-@router.post("/judge/scores/{project_id}", response_model=ScoreResponse)
+@router.post("/judge/scores/{project_id}", response_model=List[ScoreResponse])
 async def submit_score_for_project(
     project_id: UUID,
     scores: List[ScoreCreate],
+    background: BackgroundTasks,
     current_user: User = Depends(require_judge),
     db: AsyncSession = Depends(get_db),
 ):
@@ -308,6 +311,7 @@ async def submit_score_for_project(
         if score:
             score.score = score_data.score
             score.comment = score_data.comment
+            score.submitted_at = datetime.now(timezone.utc)
         else:
             score = Score(
                 event_id=project.event_id,
@@ -316,6 +320,7 @@ async def submit_score_for_project(
                 criteria_id=score_data.criteria_id,
                 score=score_data.score,
                 comment=score_data.comment,
+                submitted_at=datetime.now(timezone.utc),
             )
             db.add(score)
         
@@ -324,22 +329,28 @@ async def submit_score_for_project(
     await db.commit()
     for r in results:
         await db.refresh(r)
-    
+
+    background.add_task(
+        notify, project.event_id, "score.submitted",
+        {"project_id": str(project_id), "judge_id": str(current_user.id)},
+    )
+
     return results
 
 
 # Progress Dashboard
-@router.get("/events/{event_id}/judging/progress", response_model=ProgressDashboard)
+@router.get("/events/{event_identifier}/judging/progress", response_model=ProgressDashboard)
 async def get_judging_progress(
-    event_id: UUID,
+    event_identifier: str,
     current_user: User = Depends(require_organizer),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(Event).where(Event.id == event_id))
-    event = result.scalar_one_or_none()
-    
+    event = await resolve_event(db, event_identifier)
+
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
+
+    event_id = event.id
     
     # Total projects
     total_projects = await db.execute(

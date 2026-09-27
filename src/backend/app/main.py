@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.core.database import init_db
-from app.api import auth, events, teams, projects, judging
+from app.api import auth, events, teams, projects, judging, voting, t4
 import faulthandler
 import sys
 
@@ -42,6 +42,8 @@ app.include_router(events.router)
 app.include_router(teams.router)
 app.include_router(projects.router)
 app.include_router(judging.router)
+app.include_router(voting.router)
+app.include_router(t4.router)
 
 
 @app.get("/health")

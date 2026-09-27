@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { AuthProvider } from './(auth)/lib/auth';
+import { AuthProvider } from '@/lib/auth';
 
 export const metadata: Metadata = {
   title: 'DOGFOOD 2026 - Hackathon Platform',

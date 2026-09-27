@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_
 from sqlalchemy.orm import selectinload
@@ -10,6 +10,7 @@ from app.core.deps import get_current_user, require_participant
 from app.models import Project, Team, TeamMember, Track, Event, User
 from app.models.enums import UserRole, ProjectStatus
 from app.schemas.team_project import ProjectCreate, ProjectUpdate, ProjectSubmit, ProjectResponse, ProjectListResponse
+from app.api.t4 import notify
 
 router = APIRouter(prefix="/api/events/{event_identifier}/projects", tags=["projects"])
 
@@ -158,12 +159,16 @@ async def create_project(
     if not team:
         raise HTTPException(status_code=400, detail="Must be in a team to submit a project")
     
-    # Verify track belongs to event
+    # Verify track belongs to event (capture name now: lazy rels are
+    # unavailable after commit in async context)
+    track_name = None
     if project_data.track_id:
         result = await db.execute(select(Track).where(Track.id == project_data.track_id, Track.event_id == event.id))
-        if not result.scalar_one_or_none():
+        track = result.scalar_one_or_none()
+        if not track:
             raise HTTPException(status_code=400, detail="Invalid track for this event")
-    
+        track_name = track.name
+
     project = Project(
         **project_data.model_dump(),
         event_id=event.id,
@@ -173,11 +178,11 @@ async def create_project(
     db.add(project)
     await db.commit()
     await db.refresh(project)
-    
+
     return ProjectResponse(
         **project.__dict__,
         team_name=team.name,
-        track_name=project.track.name if project.track else None,
+        track_name=track_name,
     )
 
 
@@ -227,14 +232,27 @@ async def update_project(
     update_data = project_data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(project, field, value)
-    
+
+    # Capture display names before commit: lazy rels are unavailable
+    # after commit in async context (track is eagerly loaded above).
+    # Re-read track in case track_id changed.
+    track_name = None
+    track_id = update_data.get("track_id", project.track_id)
+    if track_id:
+        track_result = await db.execute(select(Track).where(Track.id == track_id))
+        track_obj = track_result.scalar_one_or_none()
+        track_name = track_obj.name if track_obj else None
+    team_result = await db.execute(select(Team).where(Team.id == project.team_id))
+    team_obj = team_result.scalar_one_or_none()
+    team_name = team_obj.name if team_obj else None
+
     await db.commit()
     await db.refresh(project)
-    
+
     return ProjectResponse(
         **project.__dict__,
-        team_name=project.team.name if project.team else None,
-        track_name=project.track.name if project.track else None,
+        team_name=team_name,
+        track_name=track_name,
     )
 
 
@@ -242,6 +260,7 @@ async def update_project(
 async def submit_project(
     event_identifier: str,
     project_id: UUID,
+    background: BackgroundTasks,
     current_user: User = Depends(require_participant),
     db: AsyncSession = Depends(get_db),
 ):
@@ -279,17 +298,29 @@ async def submit_project(
     
     if not project.is_draft:
         raise HTTPException(status_code=400, detail="Project already submitted")
-    
+
+    # Capture display names before commit: lazy rels are unavailable
+    # after commit in async context (track is eagerly loaded above)
+    track_name = project.track.name if project.track else None
+    team_result = await db.execute(select(Team).where(Team.id == project.team_id))
+    team = team_result.scalar_one_or_none()
+    team_name = team.name if team else None
+
     project.is_draft = False
     project.submitted_at = datetime.now(timezone.utc)
-    
+
     await db.commit()
     await db.refresh(project)
-    
+
+    background.add_task(
+        notify, event.id, "project.submitted",
+        {"project_id": str(project.id), "title": project.title, "team": team_name},
+    )
+
     return ProjectResponse(
         **project.__dict__,
-        team_name=project.team.name if project.team else None,
-        track_name=project.track.name if project.track else None,
+        team_name=team_name,
+        track_name=track_name,
     )
 
 

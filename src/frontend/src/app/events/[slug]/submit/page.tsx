@@ -44,16 +44,18 @@ export default function SubmitPage() {
   }, [slug]);
 
   const fetchData = async () => {
+    // Independent fetches: one failing endpoint must not blank the other
     try {
-      const [tracksRes, teamsRes] = await Promise.all([
-        fetch(`${API_URL}/api/events/${slug}/tracks`, { credentials: 'include' }),
-        fetch(`${API_URL}/api/events/${slug}/teams`, { credentials: 'include' }),
-      ]);
-
+      const tracksRes = await fetch(`${API_URL}/api/events/${slug}/tracks`, { credentials: 'include' });
       if (tracksRes.ok) setTracks(await tracksRes.json());
+    } catch (err) {
+      console.error('Failed to fetch tracks:', err);
+    }
+    try {
+      const teamsRes = await fetch(`${API_URL}/api/events/${slug}/teams`, { credentials: 'include' });
       if (teamsRes.ok) setTeams(await teamsRes.json());
     } catch (err) {
-      console.error('Failed to fetch data:', err);
+      console.error('Failed to fetch teams:', err);
     } finally {
       setLoading(false);
     }

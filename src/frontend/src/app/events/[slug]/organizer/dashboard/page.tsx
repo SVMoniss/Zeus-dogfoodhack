@@ -126,6 +126,9 @@ export default function OrganizerDashboardPage() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              <button onClick={() => router.push(`/events/${slug}/organizer/integrations`)} className="btn-secondary">
+                Integrations
+              </button>
               <button onClick={handleLogout} className="btn-secondary flex items-center gap-2">
                 <LogOut className="h-4 w-4" />
                 Logout

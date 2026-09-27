@@ -11,11 +11,13 @@ class CommunityVote(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "community_votes"
 
     event_id = Column(UUID(as_uuid=True), ForeignKey("events.id", ondelete="CASCADE"), nullable=False, index=True)
-    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    # Nullable: email-gated ballot tokens are rows without a project/score
+    # until the vote is actually cast.
+    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=True, index=True)
     voter_email = Column(String(255), nullable=False)
     voter_ip = Column(INET)
     vote_token = Column(UUID(as_uuid=True), unique=True, nullable=False, default=uuid.uuid4, index=True)
-    score = Column(Integer, nullable=False)
+    score = Column(Integer, nullable=True)
 
     # Relationships
     event = relationship("Event", back_populates="community_votes", foreign_keys="CommunityVote.event_id")
@@ -51,7 +53,8 @@ class VoteAuditLog(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "vote_audit_log"
 
     event_id = Column(UUID(as_uuid=True), ForeignKey("events.id", ondelete="CASCADE"), nullable=False, index=True)
-    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    # Nullable: event-level audit entries (token issued, rate limited) have no project.
+    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=True, index=True)
     action = Column(SQLEnum(VoteAction), nullable=False)
     voter_ip = Column(INET)
     voter_email = Column(String(255))

@@ -109,6 +109,8 @@ class CertificateResponse(BaseModel):
     title: str
     description: Optional[str]
     metadata: dict
+    signature: Optional[str] = None
+    public_key: Optional[str] = None
     issued_at: datetime
     verified_at: Optional[datetime]
 
