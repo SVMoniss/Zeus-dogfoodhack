@@ -134,8 +134,10 @@ async def freeze_rubric(
     existing = await db.execute(
         select(JudgingCriteria).where(JudgingCriteria.event_id == event.id)
     )
-    total = sum((c.weight for c in existing.scalars()), 0)
-    if abs(float(total) - 100) > 0.01:
+    total = sum((c.weight for c in existing.scalars()), Decimal(0))
+    # Decimal comparison: float(total) would turn e.g. 99.99 into
+    # 99.98999... and wrongly reject a within-tolerance rubric.
+    if abs(total - Decimal(100)) > Decimal("0.01"):
         raise HTTPException(
             status_code=400,
             detail=f"Rubric weights sum to {total}, must total exactly 100 to freeze",
