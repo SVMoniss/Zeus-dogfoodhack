@@ -1,0 +1,31 @@
+# .dogfood.toml
+# Put this at the root of your repo. About ten lines.
+# Run the checker with:  python3 run.py .dogfood.toml
+
+[portal]
+# Where your portal is listening after `docker compose up`.
+base_url = "http://localhost:8000"
+
+[tiers]
+# The tiers you believe you finished. Honest claims only.
+claimed = ["T1", "T2"]
+pitch = "A modern hackathon platform with FastAPI + Next.js, featuring backend-enforced judge isolation, weighted rubrics, normalization, and CSV export."
+
+[auth]
+# Whatever header proves you are this role. A cookie, a bearer token,
+# a basic auth string. Your seed script prints these when the portal
+# boots. The checker never logs in, it just attaches these.
+organizer   = "Cookie: session=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDEiLCJyb2xlIjoib3JnYW5pemVyIn0.FCyT9q74wMT0sDnAb1myVS6avfTN7xz_Uq_wMPucJ-Q"
+judge_a     = "Cookie: session=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDIiLCJyb2xlIjoianVkZ2VfYSJ9.nktXSu9YKPdDU4nVV8ruMLyQg7skqJp0Oi3hQXOtHts"
+judge_b     = "Cookie: session=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDMiLCJyb2xlIjoianVkZ2VfYiJ9.TXESY5s_0440V6xgcNejSSaS00-PXkmouGLg5KNoMFk"
+participant = "Cookie: session=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDQiLCJyb2xlIjoicGFydGljaXBhbnQifQ.U-xspw4Ap3lruhb5nL253Gb9MAyDSjTdWOcSViTipYY"
+
+[routes]
+# Your routes, whatever you called them.
+gallery      = "/api/events/sample-hack-2026/projects"
+submit       = "/api/events/sample-hack-2026/projects"
+judge_scores = "/api/judge/scores"
+# peer_scores is the url that would return judge_a's scores.
+# The checker visits it as judge_b, who should be refused.
+peer_scores  = "/api/judge/scores?judge=judge_a@dogfood.local"
+csv_export   = "/api/events/sample-hack-2026/export.csv"
