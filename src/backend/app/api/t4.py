@@ -13,7 +13,10 @@ from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.core.deps import require_organizer, resolve_event
-from app.models import APIKey, BulkJob, Certificate, Event, Project, Team, Track, User
+from app.models import (
+    APIKey, BulkJob, Certificate, Event, Project, Team, Track, User,
+    Score, JudgingCriteria, JudgeAssignment, AuditEvent,
+)
 from app.models.enums import JobStatus, JobType
 from app.schemas.voting_t4 import (
     APIKeyCreate,
@@ -551,6 +554,107 @@ async def bulk_import(
     await db.commit()
     await db.refresh(job)
     return _job_response(job)
+
+
+@router.get("/api/events/{event_identifier}/export/assignments.csv")
+async def export_assignments_csv(
+    event_identifier: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_organizer),
+):
+    """Organizer CSV of judge assignments and workloads (pipeline doc 11)."""
+    import csv
+    import io
+
+    event = await resolve_event(db, event_identifier)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    result = await db.execute(
+        select(JudgeAssignment).where(JudgeAssignment.event_id == event.id)
+    )
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Judge ID", "Track ID"])
+    for a in result.scalars().all():
+        writer.writerow([str(a.judge_id), str(a.track_id)])
+    output.seek(0)
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={event.slug}-assignments.csv"},
+    )
+
+
+@router.get("/api/events/{event_identifier}/export/reviews.csv")
+async def export_reviews_csv(
+    event_identifier: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_organizer),
+):
+    """Organizer CSV of every review score (pipeline doc 11)."""
+    import csv
+    import io
+
+    event = await resolve_event(db, event_identifier)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    result = await db.execute(select(Score).where(Score.event_id == event.id))
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Judge ID", "Project ID", "Criteria ID", "Score", "Comment", "Submitted At"])
+    for s in result.scalars().all():
+        writer.writerow(
+            [
+                str(s.judge_id), str(s.project_id), str(s.criteria_id),
+                s.score, s.comment or "",
+                s.submitted_at.isoformat() if s.submitted_at else "",
+            ]
+        )
+    output.seek(0)
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={event.slug}-reviews.csv"},
+    )
+
+
+@router.get("/api/events/{event_identifier}/export/audit.csv")
+async def export_audit_csv(
+    event_identifier: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_organizer),
+):
+    """Organizer CSV of the mutation audit trail (pipeline doc 11)."""
+    import csv
+    import io
+
+    event = await resolve_event(db, event_identifier)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    result = await db.execute(
+        select(AuditEvent)
+        .where(AuditEvent.event_id == event.id)
+        .order_by(AuditEvent.created_at)
+    )
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Time", "Action", "Actor", "Entity", "Details"])
+    for a in result.scalars().all():
+        writer.writerow(
+            [
+                a.created_at.isoformat() if a.created_at else "",
+                a.action,
+                str(a.actor_id) if a.actor_id else "",
+                f"{a.entity}:{a.entity_id}" if a.entity else "",
+                str(a.details or {}),
+            ]
+        )
+    output.seek(0)
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={event.slug}-audit.csv"},
+    )
 
 
 @router.get(

@@ -128,6 +128,50 @@ class Certificate(Base, UUIDMixin, TimestampMixin):
         return f"<Certificate(type={self.certificate_type}, recipient_id={self.recipient_id})>"
 
 
+class AuditEvent(Base, UUIDMixin, TimestampMixin):
+    """Append-only trail for sensitive mutations (roles, deadlines, rubric,
+    conflicts, assignments, reviews). Never updated or deleted by the API."""
+
+    __tablename__ = "audit_events"
+
+    event_id = Column(UUID(as_uuid=True), ForeignKey("events.id", ondelete="CASCADE"), nullable=True, index=True)
+    actor_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    action = Column(String(100), nullable=False, index=True)
+    entity = Column(String(100))
+    entity_id = Column(UUID(as_uuid=True))
+    details = Column(JSONB, default=dict)
+
+    # Relationships
+    event = relationship("Event", foreign_keys="AuditEvent.event_id")
+    actor = relationship("User", foreign_keys="AuditEvent.actor_id")
+
+    def __repr__(self):
+        return f"<AuditEvent(action={self.action}, entity={self.entity})>"
+
+
+class Conflict(Base, UUIDMixin, TimestampMixin):
+    """Declared judge conflict: blocks scoring that project (pipeline doc
+    sections 3 and 6). Organizers declare for anyone; judges for themselves."""
+
+    __tablename__ = "conflicts"
+
+    event_id = Column(UUID(as_uuid=True), ForeignKey("events.id", ondelete="CASCADE"), nullable=False, index=True)
+    judge_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    reason = Column(String(500))
+    declared_by = Column(UUID(as_uuid=True), ForeignKey("users.id"))
+
+    # Relationships
+    event = relationship("Event", foreign_keys="Conflict.event_id")
+    judge = relationship("User", foreign_keys="Conflict.judge_id")
+    project = relationship("Project", foreign_keys="Conflict.project_id")
+
+    __table_args__ = (UniqueConstraint("event_id", "judge_id", "project_id", name="uq_conflict"),)
+
+    def __repr__(self):
+        return f"<Conflict(judge_id={self.judge_id}, project_id={self.project_id})>"
+
+
 class BulkJob(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "bulk_jobs"
 

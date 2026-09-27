@@ -198,6 +198,31 @@
 | completed_at | TIMESTAMPTZ | | Batch completed |
 | is_complete | BOOLEAN | DEFAULT false | All assigned scored |
 
+### conflicts
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PK, default gen_random_uuid() | |
+| event_id | UUID | FK → events.id, CASCADE, INDEX | |
+| judge_id | UUID | FK → users.id, CASCADE, INDEX | Conflicted judge |
+| project_id | UUID | FK → projects.id, CASCADE, INDEX | Conflicted project |
+| reason | VARCHAR(500) | | Why declared |
+| declared_by | UUID | FK → users.id | Who declared |
+| **UNIQUE** | (event_id, judge_id, project_id) | | One declaration per pair |
+
+### audit_events
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | UUID | PK, default gen_random_uuid() | |
+| event_id | UUID | FK → events.id, CASCADE, INDEX, NULLABLE | |
+| actor_id | UUID | FK → users.id, SET NULL, INDEX, NULLABLE | Who acted |
+| action | VARCHAR(100) | NOT NULL, INDEX | e.g. score.submit, rubric.freeze |
+| entity | VARCHAR(100) | | Entity kind |
+| entity_id | UUID | | Entity id |
+| details | JSONB | DEFAULT '{}' | Context |
+
+Note: `events.rubric_frozen` (BOOLEAN, DEFAULT false) locks criteria edits;
+freezing requires weights to total exactly 100.
+
 ## Public Voting Tables (T3)
 
 ### community_votes

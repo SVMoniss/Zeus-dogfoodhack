@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import List, Optional
 from app.core.database import get_db
 from app.core.deps import get_current_user, require_organizer, resolve_event
+from app.services.audit import log_audit
 from app.models import Event, Track, User
 from app.models.enums import UserRole
 from app.schemas.event import (
@@ -63,6 +64,12 @@ async def create_event(
     
     event = Event(**event_data.model_dump(), created_by=current_user.id)
     db.add(event)
+    await db.flush()
+    await log_audit(
+        db, action="event.create", actor_id=current_user.id,
+        event_id=event.id, entity="event", entity_id=event.id,
+        details={"slug": event.slug},
+    )
     await db.commit()
 
     result = await db.execute(
@@ -87,6 +94,11 @@ async def update_event(
     for field, value in update_data.items():
         setattr(event, field, value)
 
+    await log_audit(
+        db, action="event.update", actor_id=current_user.id,
+        event_id=event.id, entity="event", entity_id=event.id,
+        details={"fields": sorted(update_data.keys())},
+    )
     await db.commit()
 
     result = await db.execute(

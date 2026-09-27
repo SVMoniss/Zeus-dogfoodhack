@@ -187,18 +187,19 @@ async def join_team(
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Already in a team for this event")
 
-    # Check team capacity
+    # Check team capacity (capture count once: results close on commit)
     member_count = await db.execute(
         select(func.count(TeamMember.id)).where(TeamMember.team_id == team.id)
     )
-    if member_count.scalar() >= team.max_members:
+    count = member_count.scalar() or 0
+    if count >= team.max_members:
         raise HTTPException(status_code=400, detail="Team is full")
 
     member = TeamMember(team_id=team.id, user_id=current_user.id)
     db.add(member)
     await db.commit()
     await db.refresh(team)
-    team.member_count = member_count.scalar() + 1
+    team.member_count = count + 1
 
     return team
 
@@ -279,19 +280,53 @@ async def join_team_by_invite_code(
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Already in a team for this event")
 
-    # Check team capacity
+    # Check team capacity (capture count once: results close on commit)
     member_count = await db.execute(
         select(func.count(TeamMember.id)).where(TeamMember.team_id == team.id)
     )
-    if member_count.scalar() >= team.max_members:
+    count = member_count.scalar() or 0
+    if count >= team.max_members:
         raise HTTPException(status_code=400, detail="Team is full")
 
     member = TeamMember(team_id=team.id, user_id=current_user.id)
     db.add(member)
     await db.commit()
     await db.refresh(team)
-    team.member_count = member_count.scalar() + 1
+    team.member_count = count + 1
 
+    return team
+
+
+@router.post("/{team_id}/invite-code/refresh", response_model=TeamResponse)
+async def refresh_invite_code(
+    event_identifier: str,
+    team_id: UUID,
+    current_user: User = Depends(require_participant),
+    db: AsyncSession = Depends(get_db),
+):
+    """Rotate the invite code (revokes the shared link). Team members only."""
+    event = await resolve_event(db, event_identifier)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    result = await db.execute(select(Team).where(Team.id == team_id, Team.event_id == event.id))
+    team = result.scalar_one_or_none()
+    if not team:
+        raise HTTPException(status_code=404, detail="Team not found")
+    member = await db.execute(
+        select(TeamMember).where(TeamMember.team_id == team.id, TeamMember.user_id == current_user.id)
+    )
+    if not member.scalar_one_or_none():
+        raise HTTPException(status_code=403, detail="Only team members can rotate the code")
+
+    import uuid as uuid_lib
+
+    team.invite_code = uuid_lib.uuid4().hex[:8].upper()
+    await db.commit()
+    await db.refresh(team)
+    member_count = await db.execute(
+        select(func.count(TeamMember.id)).where(TeamMember.team_id == team.id)
+    )
+    team.member_count = member_count.scalar() or 0
     return team
 
 

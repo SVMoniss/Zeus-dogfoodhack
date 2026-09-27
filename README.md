@@ -14,12 +14,16 @@ A submission and judging platform for hackathons, built for the DOGFOOD 2026 hac
 - **Public Gallery**: Search, filter by track, pagination, no auth required
 
 ### T2 - Judging System ✅
-- **Judge Invitation & Assignment**: Email invites, track-based assignments
-- **Weighted Scoring Rubric**: Configurable criteria with weights (must sum to 100%)
+- **Judge Invitation & Assignment**: Email invites, track-based assignments (dashboard UI included)
+- **Weighted Scoring Rubric**: Configurable criteria, frozen at exactly 100% before judging
 - **Backend-Enforced Isolation**: Judges can ONLY see their own scores (critical checker requirement)
+- **Self-review & Conflict Exclusion**: Judges cannot score their own team or conflicted projects
 - **Progress Dashboard**: Real-time organizer view of judging progress
 - **Cross-Judge Normalization**: Z-score normalization per judge (documented in JUDGING.md)
-- **CSV Export**: Results export with raw and normalized scores
+- **Multi-method Ranks**: Raw, calibrated, Bradley-Terry, Borda + ROBUST/FRAGILE boundary verdict
+- **Team Receipts**: Per-team averages, anonymized feedback, ranks per method
+- **Mutation Audit Trail**: Every sensitive change logged for organizers
+- **CSV Export**: Results (raw + normalized + ranks), assignments, reviews, audit
 
 ### T3 - Public Voting ✅
 - **Email-gated voting tokens** (`POST /api/events/{id}/voting/token`, 5/hour per email)
@@ -176,6 +180,7 @@ python3 run.py .dogfood.toml > acceptance-report.txt
 - [ARCHITECTURE.md](ARCHITECTURE.md) - System design and rationale
 - [DATA-MODEL.md](DATA-MODEL.md) - Database schema and migrations
 - [JUDGING.md](JUDGING.md) - Judging algorithms, normalization, audit trail
+- [THREAT-MODEL.md](THREAT-MODEL.md) - Threats, mitigations, accepted risks
 
 ## License
 

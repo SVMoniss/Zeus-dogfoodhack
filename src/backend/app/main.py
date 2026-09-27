@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.core.database import init_db
-from app.api import auth, events, teams, projects, judging, voting, t4
+from app.api import auth, events, teams, projects, judging, voting, t4, audit
 import faulthandler
 import sys
 
@@ -44,11 +44,38 @@ app.include_router(projects.router)
 app.include_router(judging.router)
 app.include_router(voting.router)
 app.include_router(t4.router)
+app.include_router(audit.router)
 
 
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+
+@app.get("/health/live")
+async def health_live():
+    return {"status": "alive", "version": app.version}
+
+
+@app.get("/health/ready")
+async def health_ready():
+    from sqlalchemy import text as sa_text
+
+    from app.core.database import engine
+
+    try:
+        async with engine.connect() as conn:
+            await conn.execute(sa_text("SELECT 1"))
+        return {"status": "ready", "database": "reachable"}
+    except Exception as exc:  # noqa: BLE001 - readiness probe reports, never raises
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=503, detail=f"database unreachable: {exc}")
+
+
+@app.get("/health/version")
+async def health_version():
+    return {"name": "DOGFOOD 2026 API", "version": app.version}
 
 
 @app.get("/api")

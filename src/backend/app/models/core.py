@@ -47,6 +47,8 @@ class Event(Base, UUIDMixin, TimestampMixin):
     results_published_at = Column(DateTime(timezone=True))
     is_active = Column(Boolean, default=True, nullable=False)
     prizes = Column(JSONB, default=list, nullable=False, server_default="[]")
+    # A frozen rubric cannot be edited; freezing requires weights to sum to 100.
+    rubric_frozen = Column(Boolean, default=False, nullable=False, server_default="false")
     created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"))
 
     # Relationships
