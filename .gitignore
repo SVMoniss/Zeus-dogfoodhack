@@ -67,8 +67,8 @@ temp/
 *.tmp
 plan_temp.md
 
-# Art-framework
-.opencode/history/
+# Art-framework (agent scaffolding, not part of submission)
+.opencode/
 
 # Provided input (organizer spec, not project code)
 spec/
