@@ -55,7 +55,6 @@ A submission and judging platform for hackathons, built for the DOGFOOD 2026 hac
 - Docker Compose v2
 
 ### One Command Startup
-
 ```bash
 docker compose up
 ```
@@ -132,6 +131,17 @@ LIVE_EMAIL=dilan.yilmaz@example.org LIVE_PW=judgepass123 LIVE_TITLE='Repair Cafe
 NEW_TITLE='Encore Alley' NEW_ASSERT=Encore TERMINAL_HTML=terminal3.html
 OUT_PREFIX=e2e-demo-grand-jury node demo-5min/make.mjs` (narrated twin:
 `e2e-demo-grand-jury-narrated.mp4`, Zira voice).
+
+## Demo video: architecture (1:00)
+
+`e2e-arch-1min.mp4` — Team ZEUS presents the architecture, tech stack, API and
+supporting screens in 60 seconds, voiced throughout (Zira): title → three
+containers/one command (Next.js 14 :3000, FastAPI :8000, Postgres 16 :5432) →
+typed stack → REST endpoints beside real screenshots (landing, organizer loads,
+gallery, isolated scoring) → animated Thanks / Team ZEUS. Rebuilt with
+`node demo-5min/arch_shots.mjs` (screenshots), `SCENARIO=arch` narration,
+`node demo-5min/arch_record.mjs` (slide deck `demo-5min/arch.html`, timings from
+narration), muxed with the slide offsets.
 
 ## Project Structure
 
@@ -222,6 +232,20 @@ Run the checker:
 ```bash
 python3 run.py .dogfood.toml > acceptance-report.txt
 ```
+
+## Public deploy (Render playground)
+
+`render.yaml` is a Blueprint for a public play link: managed Postgres 16,
+backend + frontend Docker services. The app is deploy-ready: `DATABASE_URL`
+auto-normalizes to `postgresql+asyncpg://`, `DB_SSL=true` enables TLS,
+`SECRET_KEY` is generated, and the frontend takes its API base as a build arg.
+
+1. Push to GitHub → Render **New > Blueprint** → select the repo.
+2. Copy the `dogfood-backend` public URL, put it in the frontend `buildArg`
+   `NEXT_PUBLIC_API_URL` in `render.yaml` (and the matching env var), push.
+   Optionally set backend `FRONTEND_URL` to the frontend URL for strict CORS.
+3. Play: test users `organizer@ / judge_a@ / judge_b@ / participant@dogfood.local`
+   with `testpass123`. Anyone with the link can act — redeploy to reset.
 
 ## Documentation
 

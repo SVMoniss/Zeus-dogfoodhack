@@ -6,6 +6,8 @@ engine = create_async_engine(
     settings.DATABASE_URL,
     echo=False,
     pool_pre_ping=True,
+    # Managed Postgres (Render, …) requires TLS; local docker does not.
+    connect_args={"ssl": True} if settings.DB_SSL else {},
 )
 
 AsyncSessionLocal = async_sessionmaker(
