@@ -10,7 +10,7 @@ test.describe('Public Gallery', () => {
     await page.goto('/events/sample-hack-2026/gallery');
     // Page one shows fixture project cards; search narrows to the first one
     // (gallery order is by submission date, so don't assume which is first)
-    const cards = page.locator('.card h3');
+    const cards = page.locator('.listing-card h3');
     await expect(cards.first()).toBeVisible();
     const firstTitle = (await cards.first().textContent())?.trim() ?? '';
     expect(firstTitle.length).toBeGreaterThan(0);

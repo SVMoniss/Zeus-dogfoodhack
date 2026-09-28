@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '@/lib/auth';
-import { Trophy, ExternalLink, ArrowRight, LogOut } from 'lucide-react';
+import AppShell from '@/components/AppShell';
+import { ArrowLeft } from 'lucide-react';
 import { Track } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -13,13 +12,6 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 export default function SubmitPage() {
   const params = useParams();
   const slug = params.slug as string;
-  const router = useRouter();
-  const { user, logout } = useAuth();
-
-  const handleLogout = async () => {
-    await logout();
-    router.push('/events');
-  };
 
   const [tracks, setTracks] = useState<Track[]>([]);
   const [teams, setTeams] = useState<Array<{ id: string; name: string; invite_code: string; member_count: number }>>([]);
@@ -115,40 +107,21 @@ export default function SubmitPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
+      <AppShell>
+        <p className="py-20 text-center font-mono text-sm text-muted-foreground">Loading form…</p>
+      </AppShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="border-b border-gray-200 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link href="/events" className="text-gray-500 hover:text-gray-700">
-                <ArrowRight className="h-5 w-5 rotate-180" />
-              </Link>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">Submit Project</h1>
-                <p className="text-sm text-gray-500">Create a draft project with your team</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <button onClick={handleLogout} className="btn-secondary flex items-center gap-2">
-                <LogOut className="h-4 w-4" />
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="card">
-          <h2 className="text-2xl font-bold mb-6">Submit a Project</h2>
-          <p className="text-gray-600 mb-6">Create a draft project with your team. You can edit until the deadline.</p>
+    <AppShell>
+      <div className="mx-auto max-w-2xl py-10">
+        <Link href={`/events/${slug}`} className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Back to hackathon
+        </Link>
+        <h1 className="mt-2 text-3xl font-bold tracking-tight">Submit a Project</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Create a draft project with your team. You can edit until the deadline.</p>
+        <div className="card mt-6">
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {errors.submit && (
@@ -278,14 +251,14 @@ export default function SubmitPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="btn-primary w-full py-3"
+                className="btn-full w-full"
               >
                 {submitting ? 'Creating...' : 'Create Project'}
               </button>
             </div>
           </form>
         </div>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }

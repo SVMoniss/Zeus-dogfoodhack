@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
+import AppShell from '@/components/AppShell';
 import { ArrowRight, Key, Webhook, Award, Package, AlertCircle, LogOut } from 'lucide-react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -49,13 +50,15 @@ export default function IntegrationsPage() {
 
   if (user && user.role !== 'organizer' && user.role !== 'admin') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Insufficient permissions</h2>
-          <button onClick={() => router.push('/events')} className="btn-primary">Back to Events</button>
+      <AppShell>
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Insufficient permissions</h2>
+            <button onClick={() => router.push('/events')} className="btn-primary">Back to Events</button>
+          </div>
         </div>
-      </div>
+      </AppShell>
     );
   }
 
@@ -148,24 +151,19 @@ export default function IntegrationsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="border-b border-gray-200 bg-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center">
-              <Link href="/events" className="text-gray-500 hover:text-gray-700">
-                <ArrowRight className="h-5 w-5 rotate-180" />
-              </Link>
-              <h1 className="ml-4 text-xl font-bold text-gray-900">Integrations & Records</h1>
-            </div>
-            <button onClick={async () => { await logout(); router.push('/events'); }} className="btn-secondary flex items-center gap-2">
-              <LogOut className="h-4 w-4" /> Logout
-            </button>
+    <AppShell>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        <div className="flex h-16 items-center justify-between">
+          <div className="flex items-center">
+            <Link href="/events" className="text-gray-500 hover:text-gray-700">
+              <ArrowRight className="h-5 w-5 rotate-180" />
+            </Link>
+            <h1 className="ml-4 text-xl font-bold text-gray-900">Integrations & Records</h1>
           </div>
+          <button onClick={async () => { await logout(); router.push('/events'); }} className="btn-secondary flex items-center gap-2">
+            <LogOut className="h-4 w-4" /> Logout
+          </button>
         </div>
-      </header>
-
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {notice && <p className="text-red-500 text-sm">{notice}</p>}
 
         <div className="card">
@@ -226,7 +224,7 @@ export default function IntegrationsPage() {
           )}
           {jobs.length > 0 && <p className="text-sm text-gray-500 mt-2">{jobs.length} bulk job(s) on record.</p>}
         </div>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }

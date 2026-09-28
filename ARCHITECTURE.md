@@ -33,7 +33,7 @@ DOGFOOD 2026 is a self-hostable hackathon submission and judging platform built 
   `t4` (API keys, v1 REST, webhooks, certificates, widget, bulk)
 - **Key Features**:
   - Async request handling for high concurrency
-  - Automatic OpenAPI/Swagger documentation
+  - Automatic OpenAPI/Swagger documentation (served at `/openapi.json` and `/docs`)
   - Pydantic validation for request/response
   - Dependency injection for clean separation
   - JWT authentication with httpOnly cookies, plus `X-API-Key` for v1 REST
@@ -118,11 +118,23 @@ run.py → .dogfood.toml (config) → Portal (base_url)
 - **Role-Based Access Control**: visitor < participant < judge < organizer < admin
 - **Backend Enforcement**: All authorization checks in API layer, never just frontend
 - **Judge Isolation**: Critical middleware ensures judges only see their own scores
+- **Deny by default**: `require_role(*allowlist)` in `src/backend/app/core/deps.py`;
+  no session → 401, wrong role → 403. Verified live:
+
+| Role | Endpoint | Result |
+|---|---|---|
+| Visitor (no auth) | `GET /api/events/{slug}/projects` | 200 |
+| Participant | `POST /api/events/{slug}/projects` (closed event) | 400 |
+| Participant | `GET /api/judge/scores`, `GET …/export.csv` | 403 |
+| Judge | `GET /api/judge/scores` (own) | 200 |
+| Judge | `GET /api/judge/scores?judge=<peer>` | 403 |
+| Organizer | `GET /api/events/{slug}/export.csv` | 200, CSV with `Total Weighted` |
+| No session | protected routes | 401 |
 
 ### Data Protection
 - **SQL Injection Prevention**: Parameterized queries via SQLAlchemy ORM
 - **Input Validation**: Pydantic schemas on all endpoints
-- **Rate Limiting**: On auth endpoints and voting (planned)
+- **Rate Limiting**: 429 on login brute-force and ballot tokens (per-email + per-IP), every attempt audited
 
 ## Scalability Considerations
 

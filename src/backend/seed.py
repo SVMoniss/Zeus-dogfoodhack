@@ -347,7 +347,67 @@ async def seed():
         
         await db.commit()
         print("Seeding complete!")
-        
+
+        # Persistent open demo event (see gaps register #8): the fixture
+        # event above must stay CLOSED for the checker, so live create/submit
+        # demos use this always-open event. Windows are relative to seed time
+        # and refreshed on every boot so the demo never goes stale.
+        # Idempotent: stable uuid5 ids, never touches the fixture event.
+        now = datetime.now(event.submissions_open_at.tzinfo)
+        demo_id = uuid.uuid5(uuid.NAMESPACE_DNS, "demo-open-event")
+        demo, demo_created = await get_or_create(Event, db, id=demo_id)
+        if demo_created:
+            demo.name = "Open Demo Day"
+            demo.slug = "demo-open"
+            demo.description = "Always-open demo event for live create/submit walkthroughs."
+            demo.submissions_open_at = now - timedelta(days=1)
+            demo.submissions_close_at = now + timedelta(days=30)
+            demo.voting_open_at = None
+            demo.voting_close_at = None
+            demo.results_published_at = None
+            demo.is_active = True
+            demo.created_by = user_map["organizer"].id
+            if getattr(demo, "prizes", None) is None:
+                demo.prizes = []
+            print("Created open demo event (demo-open)")
+        else:
+            # Refresh a stale window so the demo stays usable across reseeds.
+            if demo.submissions_close_at < now:
+                demo.submissions_open_at = now - timedelta(days=1)
+                demo.submissions_close_at = now + timedelta(days=30)
+                print("Refreshed open demo event window (demo-open)")
+            else:
+                print("Open demo event already exists (demo-open)")
+
+        await db.flush()
+
+        demo_tracks = [
+            {"name": "General", "description": "Anything goes", "display_order": 1},
+            {"name": "Web", "description": "Web apps and sites", "display_order": 2},
+            {"name": "Data & AI", "description": "Data pipelines and models", "display_order": 3},
+        ]
+        for t in demo_tracks:
+            tid = uuid.uuid5(uuid.NAMESPACE_DNS, f"demo-open-track-{t['name']}")
+            track, t_created = await get_or_create(Track, db, id=tid)
+            if t_created:
+                track.event_id = demo.id
+                track.name = t["name"]
+                track.description = t["description"]
+                track.display_order = t["display_order"]
+
+        for i, c in enumerate(criteria_list):
+            crit, c_created = await get_or_create(
+                JudgingCriteria, db, event_id=demo.id, name=c["name"]
+            )
+            if c_created:
+                crit.description = c["description"]
+                crit.weight = Decimal(str(c["weight"]))
+                crit.min_score = c["min_score"]
+                crit.max_score = c["max_score"]
+                crit.display_order = c["display_order"]
+
+        await db.commit()
+
         # Print summary
         print(f"\nEvent: {event.name} ({event.slug})")
         print(f"  Tracks: {len(track_map)}")

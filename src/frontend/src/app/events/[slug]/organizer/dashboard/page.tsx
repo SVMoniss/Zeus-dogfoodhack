@@ -1,9 +1,8 @@
 'use client';
 
-'use client';
-
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import AppShell from '@/components/AppShell';
 import { useAuth } from '@/lib/auth';
 import { ArrowRight, Users, ClipboardCheck, BarChart2, AlertCircle, Loader2, LogOut } from 'lucide-react';
 
@@ -137,45 +136,53 @@ export default function OrganizerDashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary-600" />
-      </div>
+      <AppShell>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-12 w-12 animate-spin text-primary-600" />
+        </div>
+      </AppShell>
     );
   }
 
   if (accessDenied || !user || user.role !== 'organizer') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Insufficient permissions</h2>
-          <p className="text-gray-600 mb-4">Only organizers can view the dashboard.</p>
-          <button onClick={() => router.push('/events')} className="btn-primary">Back to Events</button>
+      <AppShell>
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Insufficient permissions</h2>
+            <p className="text-gray-600 mb-4">Only organizers can view the dashboard.</p>
+            <button onClick={() => router.push('/events')} className="btn-primary">Back to Events</button>
+          </div>
         </div>
-      </div>
+      </AppShell>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Error</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <button onClick={fetchDashboard} className="btn-primary">Retry</button>
+      <AppShell>
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Error</h2>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <button onClick={fetchDashboard} className="btn-primary">Retry</button>
+          </div>
         </div>
-      </div>
+      </AppShell>
     );
   }
 
   if (!dashboard) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-500">No dashboard data available.</p>
+      <AppShell>
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <p className="text-gray-500">No dashboard data available.</p>
+          </div>
         </div>
-      </div>
+      </AppShell>
     );
   }
 
@@ -184,33 +191,28 @@ export default function OrganizerDashboardPage() {
     : 0;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="border-b border-gray-200 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <button onClick={() => router.push('/events')} className="text-gray-500 hover:text-gray-700">
-                <ArrowRight className="h-5 w-5 rotate-180" />
-              </button>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">Organizer Dashboard</h1>
-                <p className="text-sm text-gray-500">{slug}</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <button onClick={() => router.push(`/events/${slug}/organizer/integrations`)} className="btn-secondary">
-                Integrations
-              </button>
-              <button onClick={handleLogout} className="btn-secondary flex items-center gap-2">
-                <LogOut className="h-4 w-4" />
-                Logout
-              </button>
+    <AppShell>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex h-16 items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <button onClick={() => router.push('/events')} className="text-gray-500 hover:text-gray-700">
+              <ArrowRight className="h-5 w-5 rotate-180" />
+            </button>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900">Organizer Dashboard</h1>
+              <p className="text-sm text-gray-500">{slug}</p>
             </div>
           </div>
+          <div className="flex items-center space-x-4">
+            <button onClick={() => router.push(`/events/${slug}/organizer/integrations`)} className="btn-secondary">
+              Integrations
+            </button>
+            <button onClick={handleLogout} className="btn-secondary flex items-center gap-2">
+              <LogOut className="h-4 w-4" />
+              Logout
+            </button>
+          </div>
         </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Overview Cards */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
           <div className="card p-6">
@@ -381,7 +383,7 @@ export default function OrganizerDashboardPage() {
             </table>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }

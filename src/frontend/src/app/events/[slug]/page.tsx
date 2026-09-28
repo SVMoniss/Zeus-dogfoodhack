@@ -4,11 +4,20 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
-import { Calendar, Clock, Users, Trophy, Code, ExternalLink, ArrowRight } from 'lucide-react';
-import { Event, ProjectListItem, Track } from '@/types';
-import { formatDistanceToNow, parseISO } from 'date-fns';
+import AppShell from '@/components/AppShell';
+import { DetailBanner, ListingThumb, splitEventTitle, EventIdTag } from '@/components/Listing';
+import { ArrowLeft, ArrowUpRight, CalendarDays, Trophy, Users } from 'lucide-react';
+import type { Event, ProjectListItem, Track } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+function fmt(iso: string | null) {
+  if (!iso) return 'TBC';
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime())
+    ? 'TBC'
+    : d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+}
 
 export default function EventDetailPage() {
   const params = useParams();
@@ -19,255 +28,177 @@ export default function EventDetailPage() {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [projects, setProjects] = useState<ProjectListItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'gallery' | 'submit' | 'team' | 'judge'>('overview');
+  const { title: eventTitle, runId: eventRunId } = splitEventTitle(event?.name ?? '');
+  const [activeTab, setActiveTab] = useState<'overview' | 'submissions'>('overview');
 
   useEffect(() => {
-    fetchEvent();
+    (async () => {
+      try {
+        const [eventRes, tracksRes, projectsRes] = await Promise.all([
+          fetch(`${API_URL}/api/events/${slug}`, { credentials: 'include' }),
+          fetch(`${API_URL}/api/events/${slug}/tracks`, { credentials: 'include' }),
+          // limit=100: the endpoint pages at 20, but event views need the full set.
+          fetch(`${API_URL}/api/events/${slug}/projects?limit=100`, { credentials: 'include' }),
+        ]);
+        if (eventRes.ok) setEvent(await eventRes.json());
+        if (tracksRes.ok) setTracks(await tracksRes.json());
+        if (projectsRes.ok) setProjects(await projectsRes.json());
+      } catch {
+        /* error state below */
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [slug]);
 
-  const fetchEvent = async () => {
-    try {
-      const [eventRes, tracksRes, projectsRes] = await Promise.all([
-        fetch(`${API_URL}/api/events/${slug}`, { credentials: 'include' }),
-        fetch(`${API_URL}/api/events/${slug}/tracks`, { credentials: 'include' }),
-        fetch(`${API_URL}/api/events/${slug}/projects`, { credentials: 'include' }),
-      ]);
-
-      if (eventRes.ok) setEvent(await eventRes.json());
-      if (tracksRes.ok) setTracks(await tracksRes.json());
-      if (projectsRes.ok) setProjects(await projectsRes.json());
-    } catch (err) {
-      console.error('Failed to fetch event:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading || authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    );
-  }
-
-  if (!event) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <Trophy className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900">Event not found</h2>
-          <Link href="/events" className="btn-primary mt-4 inline-block">Back to Events</Link>
-        </div>
-      </div>
-    );
-  }
-
-  const isOrganizer = user?.role === 'organizer' || user?.role === 'admin';
-  const isJudge = user?.role === 'judge' || user?.role === 'organizer' || user?.role === 'admin';
-  const isParticipant = user?.role === 'participant' || user?.role === 'judge' || user?.role === 'organizer' || user?.role === 'admin';
-
-  const tabs: { id: 'overview' | 'gallery' | 'submit' | 'team' | 'judge'; label: string; icon: typeof Trophy }[] = [
-    { id: 'overview', label: 'Overview', icon: Trophy },
-    { id: 'gallery', label: 'Gallery', icon: Code },
-  ];
-
-  if (isParticipant) tabs.push({ id: 'submit', label: 'Submit', icon: ExternalLink }, { id: 'team', label: 'Team', icon: Users });
-  if (isJudge) tabs.push({ id: 'judge', label: 'Judge', icon: Trophy });
+  const isParticipant =
+    user?.role === 'participant' ||
+    user?.role === 'judge' ||
+    user?.role === 'organizer' ||
+    user?.role === 'admin';
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="border-b border-gray-200 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link href="/events" className="text-gray-500 hover:text-gray-700">
-                <ArrowRight className="h-5 w-5 rotate-180" />
-              </Link>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">{event.name}</h1>
-                <p className="text-sm text-gray-500">{event.slug}</p>
+    <AppShell>
+      {loading || authLoading ? (
+        <p className="py-20 text-center font-mono text-sm text-muted-foreground">Loading hackathon…</p>
+      ) : !event ? (
+        <div className="py-20 text-center">
+          <Trophy className="mx-auto h-10 w-10 text-muted-foreground" aria-hidden="true" />
+          <h2 className="mt-3 text-2xl font-bold">Hackathon not found</h2>
+          <Link href="/events" className="btn-full mt-6">
+            Back to Hackathons
+          </Link>
+        </div>
+      ) : (
+        <div className="py-10">
+          <Link href="/events" className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" /> All hackathons
+          </Link>
+
+          <div className="cut-frame mt-4">
+            <div className="cut-card overflow-hidden">
+              <DetailBanner
+                title={eventTitle}
+                ribbon={event.is_active ? 'Open' : 'Closed'}
+                ribbonClass={event.is_active ? 'bg-green-600' : 'bg-slate-500'}
+              />
+              <div className="p-6 sm:p-8">
+                <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{eventTitle}</h1>
+                {eventRunId && <EventIdTag runId={eventRunId} />}
+                <p className="mt-2 max-w-2xl text-muted-foreground">
+                  {event.description || 'No description yet.'}
+                </p>
+                <dl className="mt-6 grid gap-4 border-t border-border pt-6 text-sm sm:grid-cols-3">
+                  <div>
+                    <dt className="flex items-center gap-1.5 font-semibold uppercase tracking-wide text-muted-foreground text-xs">
+                      <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" /> Submissions
+                    </dt>
+                    <dd className="mt-1 font-medium">{fmt(event.submissions_open_at)} – {fmt(event.submissions_close_at)}</dd>
+                  </div>
+                  <div>
+                    <dt className="flex items-center gap-1.5 font-semibold uppercase tracking-wide text-muted-foreground text-xs">
+                      <Users className="h-3.5 w-3.5" aria-hidden="true" /> Projects
+                    </dt>
+                    <dd className="mt-1 font-medium">{projects.length} submitted</dd>
+                  </div>
+                  <div>
+                    <dt className="flex items-center gap-1.5 font-semibold uppercase tracking-wide text-muted-foreground text-xs">
+                      <Trophy className="h-3.5 w-3.5" aria-hidden="true" /> Tracks
+                    </dt>
+                    <dd className="mt-1 font-medium">{tracks.length} ways to win</dd>
+                  </div>
+                </dl>
+                <div className="mt-6 flex flex-wrap gap-2.5">
+                  {isParticipant ? (
+                    <Link href={`/events/${slug}/submit`} className="btn-full">
+                      Submit a project
+                    </Link>
+                  ) : (
+                    <Link href="/login" className="btn-full">
+                      Join this hackathon
+                    </Link>
+                  )}
+                  <Link href={`/events/${slug}/gallery`} className="btn-board">
+                    Browse submissions
+                    <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+                  </Link>
+                </div>
               </div>
             </div>
-            <div className="flex items-center space-x-2">
-              {user ? (
-                <>
-                  <span className="text-sm text-gray-600">{user.email}</span>
-                  <button onClick={async () => {
-                    await fetch(`${API_URL}/api/auth/logout`, { method: 'POST', credentials: 'include' });
-                    window.location.reload();
-                  }} className="btn-secondary text-sm">Logout</button>
-                </>
-              ) : (
-                <Link href="/login" className="btn-primary text-sm">Sign in</Link>
-              )}
-            </div>
           </div>
-        </div>
-      </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Tabs */}
-        <nav className="mb-8" aria-label="Event sections">
-          <div className="border-b border-gray-200">
-            <ul className="flex flex-wrap -mb-px space-x-8" role="tablist">
-              {tabs.map((tab) => (
-                <li key={tab.id} role="presentation">
-                  <button
-                    role="tab"
-                    aria-selected={activeTab === tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                      activeTab === tab.id
-                        ? 'border-primary-600 text-primary-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
-                  >
-                    <tab.icon className="h-4 w-4" />
-                    {tab.label}
-                  </button>
-                </li>
-              ))}
-            </ul>
+          <div className="mt-8 border-b border-border" role="tablist" aria-label="Event sections">
+            {(['overview', 'submissions'] as const).map((t) => (
+              <button
+                key={t}
+                role="tab"
+                aria-selected={activeTab === t}
+                onClick={() => setActiveTab(t)}
+                className={`mr-8 border-b-2 pb-3 text-sm font-semibold capitalize transition-colors ${
+                  activeTab === t
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {t}
+              </button>
+            ))}
           </div>
-        </nav>
 
-        {/* Tab Content */}
-        {activeTab === 'overview' && (
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            <div className="card">
-              <h3 className="text-lg font-semibold mb-4">Event Details</h3>
-              <p className="text-gray-600 mb-6">{event.description || 'No description provided.'}</p>
-              <dl className="space-y-4 text-sm">
-                <div className="flex items-center gap-3">
-                  <Calendar className="h-5 w-5 text-gray-400" />
-                  <div>
-                    <dt className="text-gray-500">Submissions Open</dt>
-                    <dd className="font-medium">{formatDistanceToNow(parseISO(event.submissions_open_at), { addSuffix: true })}</dd>
+          {activeTab === 'overview' ? (
+            <div className="mt-8 grid gap-5 lg:grid-cols-2">
+              <div className="card">
+                <h2 className="eyebrow">Timeline</h2>
+                <dl className="mt-4 space-y-3 text-sm">
+                  <div className="flex items-baseline justify-between gap-4">
+                    <dt className="text-muted-foreground">Submissions open</dt>
+                    <dd className="font-semibold">{fmt(event.submissions_open_at)}</dd>
                   </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Calendar className="h-5 w-5 text-gray-400" />
-                  <div>
-                    <dt className="text-gray-500">Submissions Close</dt>
-                    <dd className="font-medium text-red-600">{formatDistanceToNow(parseISO(event.submissions_close_at), { addSuffix: true })}</dd>
+                  <div className="flex items-baseline justify-between gap-4">
+                    <dt className="text-muted-foreground">Submissions close</dt>
+                    <dd className="font-semibold">{fmt(event.submissions_close_at)}</dd>
                   </div>
-                </div>
-                {event.voting_open_at && event.voting_close_at && (
-                  <>
-                    <div className="flex items-center gap-3">
-                      <Users className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <dt className="text-gray-500">Voting Open</dt>
-                        <dd className="font-medium">{formatDistanceToNow(parseISO(event.voting_open_at), { addSuffix: true })}</dd>
-                      </div>
+                  {event.voting_open_at && (
+                    <div className="flex items-baseline justify-between gap-4">
+                      <dt className="text-muted-foreground">Voting</dt>
+                      <dd className="font-semibold">{fmt(event.voting_open_at)} – {fmt(event.voting_close_at)}</dd>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <Users className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <dt className="text-gray-500">Voting Close</dt>
-                        <dd className="font-medium">{formatDistanceToNow(parseISO(event.voting_close_at), { addSuffix: true })}</dd>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </dl>
-            </div>
-
-            <div className="card">
-              <h3 className="text-lg font-semibold mb-4">Tracks</h3>
-              <ul className="space-y-2">
-                {tracks.map((track) => (
-                  <li key={track.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-                    <span className="font-medium">{track.name}</span>
-                    <span className="text-sm text-gray-500">{track.description || 'No description'}</span>
-                  </li>
-                ))}
-                {tracks.length === 0 && <p className="text-gray-500">No tracks defined yet.</p>}
-              </ul>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'gallery' && (
-          <div>
-            <div className="mb-6 flex flex-wrap gap-4">
-              <input
-                type="text"
-                placeholder="Search projects..."
-                className="input flex-1 max-w-md"
-              />
-              <select className="input w-auto">
-                <option value="">All Tracks</option>
-                {tracks.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-              </select>
-            </div>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {projects.map((project) => (
-                <Link key={project.id} href={`/events/${slug}/projects/${project.id}`} className="card hover:shadow-md transition-shadow">
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">{project.title}</h3>
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">{project.summary || 'No summary'}</p>
-                  <div className="flex items-center justify-between text-sm text-gray-500">
-                    <span className="flex items-center gap-1">
-                      <Users className="h-3 w-3" />
-                      {project.team_name}
-                    </span>
-                    <span className="px-2 py-0.5 bg-primary-100 text-primary-700 rounded-full text-xs">{project.track_name}</span>
-                  </div>
-                  {project.repo_url && (
-                    <a href={project.repo_url} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1 text-primary-600 hover:text-primary-700 text-sm">
-                      <ExternalLink className="h-3 w-3" />
-                      View Repository
-                    </a>
                   )}
+                </dl>
+              </div>
+              <div className="card">
+                <h2 className="eyebrow">Tracks</h2>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {tracks.length === 0 && <p className="text-sm text-muted-foreground">No tracks defined yet.</p>}
+                  {tracks.map((t) => (
+                    <span key={t.id} className="badge">
+                      {t.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : projects.length === 0 ? (
+            <div className="mt-8 rounded-[0.625rem] border border-dashed border-border px-6 py-14 text-center">
+              <p className="font-semibold">No submissions yet</p>
+              <p className="mt-1 text-sm text-muted-foreground">Be the first to ship something great.</p>
+            </div>
+          ) : (
+            <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+              {projects.map((p) => (
+                <Link key={p.id} href={`/events/${slug}/projects/${p.id}`} className="listing-card">
+                  <ListingThumb title={p.title} ribbon={p.track_name || undefined} ribbonClass="bg-primary-700" />
+                  <div className="p-5">
+                    <h3 className="text-lg font-bold leading-snug">{p.title}</h3>
+                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{p.summary || 'No summary yet.'}</p>
+                    <p className="mt-3 border-t border-border pt-3 text-[13px] font-medium">{p.team_name}</p>
+                  </div>
                 </Link>
               ))}
-              {projects.length === 0 && (
-                <div className="col-span-full text-center py-12">
-                  <Code className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500">No projects submitted yet.</p>
-                </div>
-              )}
             </div>
-          </div>
-        )}
-
-        {activeTab === 'submit' && (
-          <div className="max-w-2xl mx-auto">
-            <div className="card">
-              <h2 className="text-2xl font-bold mb-6">Submit a Project</h2>
-              <p className="text-gray-600 mb-6">Create a draft project with your team. You can edit until the deadline.</p>
-              <Link href={`/events/${slug}/submit`} className="btn-primary inline-block">
-                Create New Project
-              </Link>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'team' && (
-          <div className="max-w-2xl mx-auto">
-            <div className="card">
-              <h2 className="text-2xl font-bold mb-6">Team Management</h2>
-              <p className="text-gray-600 mb-6">Create or join a team to submit projects.</p>
-              <Link href={`/events/${slug}/team`} className="btn-primary inline-block">
-                Manage Team
-              </Link>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'judge' && (
-          <div className="max-w-4xl mx-auto">
-            <div className="card">
-              <h2 className="text-2xl font-bold mb-6">Judge Dashboard</h2>
-              <p className="text-gray-600 mb-6">View and score your assigned projects.</p>
-              <Link href={`/events/${slug}/judge`} className="btn-primary inline-block">
-                Go to Judge Dashboard
-              </Link>
-            </div>
-          </div>
-        )}
-      </main>
-    </div>
+          )}
+        </div>
+      )}
+    </AppShell>
   );
 }

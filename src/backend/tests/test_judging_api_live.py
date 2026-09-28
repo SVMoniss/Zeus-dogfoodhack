@@ -16,6 +16,7 @@ Covers end-to-end (no mocks):
 import os
 import random
 import time
+from datetime import datetime, timedelta, timezone
 
 import httpx
 import pytest
@@ -80,8 +81,9 @@ def _build_scored_event(creds, tag):
     stamp = f"{int(time.time())}{random.randint(0, 99999)}"
     slug = f"{tag}-{stamp}"
     H_org, H_part = auth(creds["org"]), auth(creds["part"])
-    open_ = "2020-01-01T00:00:00Z"
-    close_ = "2030-01-01T00:00:00Z"
+    now = datetime.now(timezone.utc)
+    open_ = (now - timedelta(days=1)).isoformat()
+    close_ = (now + timedelta(days=30)).isoformat()
 
     r = httpx.post(f"{API}/api/events", headers=H_org, json={
         "name": f"Live {stamp}", "slug": slug, "description": "live judging",
@@ -177,10 +179,11 @@ class TestFreezeLive:
         stamp = f"{int(time.time())}{random.randint(0, 99999)}"
         slug = f"frz-{stamp}"
         H = auth(creds["org"])
+        now = datetime.now(timezone.utc)
         r = httpx.post(f"{API}/api/events", headers=H, json={
             "name": f"Frz {stamp}", "slug": slug, "description": "freeze",
-            "submissions_open_at": "2020-01-01T00:00:00Z",
-            "submissions_close_at": "2030-01-01T00:00:00Z"}, timeout=15)
+            "submissions_open_at": (now - timedelta(days=1)).isoformat(),
+            "submissions_close_at": (now + timedelta(days=30)).isoformat()}, timeout=15)
         assert r.status_code in (200, 201), r.text
         eid = r.json()["id"]
         for i, w in enumerate(weights):
