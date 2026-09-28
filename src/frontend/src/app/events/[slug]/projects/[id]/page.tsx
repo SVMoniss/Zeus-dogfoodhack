@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowRight, Users, MessageSquare } from 'lucide-react';
+import AppShell from '@/components/AppShell';
 import { Project } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -85,37 +86,36 @@ export default function ProjectDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
+      <AppShell>
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        </div>
+      </AppShell>
     );
   }
 
   if (notFound || !project) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Project not found</h2>
-          <Link href={`/events/${slug}/gallery`} className="btn-primary mt-4 inline-block">Back to Gallery</Link>
+      <AppShell>
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Project not found</h2>
+            <Link href={`/events/${slug}/gallery`} className="btn-primary mt-4 inline-block">Back to Gallery</Link>
+          </div>
         </div>
-      </div>
+      </AppShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="border-b border-gray-200 bg-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center">
-            <Link href={`/events/${slug}/gallery`} className="text-gray-500 hover:text-gray-700">
-              <ArrowRight className="h-5 w-5 rotate-180" />
-            </Link>
-            <h1 className="ml-4 text-xl font-bold text-gray-900">{project.title}</h1>
-          </div>
+    <AppShell>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <div className="flex h-16 items-center">
+          <Link href={`/events/${slug}/gallery`} className="text-gray-500 hover:text-gray-700">
+            <ArrowRight className="h-5 w-5 rotate-180" />
+          </Link>
+          <h1 className="ml-4 text-xl font-bold text-gray-900">{project.title}</h1>
         </div>
-      </header>
-
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         <div className="card">
           <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
             <Users className="h-4 w-4" />
@@ -165,7 +165,7 @@ export default function ProjectDetailPage() {
             </button>
           </form>
         </div>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }

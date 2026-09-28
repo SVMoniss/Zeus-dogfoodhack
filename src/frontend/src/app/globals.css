@@ -3,56 +3,149 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 249, 250, 251;
-  --background-end-rgb: 255, 255, 255;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 17, 24, 39;
-    --background-end-rgb: 31, 41, 55;
-  }
+  --df-bg: 255 255 255;
+  --df-surface: 245 247 247;
+  --df-card: 255 255 255;
+  --df-fg: 25 35 37;
+  --df-muted: 237 241 242;
+  --df-muted-fg: 101 125 133;
+  --df-accent: 233 241 250;
+  --df-border: 221 227 230;
+  --df-primary: 31 120 209;
+  --df-primary-fg: 255 255 255;
+  --df-radius: 0.5rem;
+  color-scheme: light;
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  color: rgb(var(--df-fg));
+  background-color: rgb(var(--df-bg));
   min-height: 100vh;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-mono,
+code,
+pre {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+::selection {
+  background-color: rgb(var(--df-accent));
+  color: rgb(var(--df-fg));
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
+  .hero-grid {
+    background-image:
+      linear-gradient(to right, rgb(var(--df-border) / 0.55) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(var(--df-border) / 0.55) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 35%, transparent 78%);
+  }
+  .hero-glow {
+    background:
+      radial-gradient(42rem 22rem at 12% -6%, rgb(var(--df-primary) / 0.16), transparent 62%),
+      radial-gradient(36rem 20rem at 88% 4%, rgb(var(--df-accent) / 0.9), transparent 65%);
+  }
+  .dark .hero-glow {
+    background:
+      radial-gradient(42rem 22rem at 12% -6%, rgb(var(--df-primary) / 0.13), transparent 62%),
+      radial-gradient(38rem 22rem at 88% 6%, rgb(var(--df-accent) / 0.55), transparent 65%);
+  }
 }
 
 @layer components {
   .btn {
-    @apply px-4 py-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium text-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed;
   }
   .btn-primary {
-    @apply btn bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
+    @apply btn bg-primary text-primary-foreground hover:brightness-110 focus:ring-ring font-sans;
+  }
+  .btn-full {
+    @apply inline-flex h-12 items-center justify-center rounded-lg bg-primary px-6 font-medium text-primary-foreground transition-all duration-300 hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background;
+  }
+  .btn-board {
+    @apply inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-input bg-transparent px-6 font-medium text-foreground transition-all duration-300 hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background;
+  }
+  .text-link {
+    @apply inline-flex items-center gap-1 font-medium text-primary hover:underline underline-offset-4;
   }
   .btn-secondary {
-    @apply btn bg-gray-100 text-gray-900 hover:bg-gray-200 focus:ring-gray-500;
+    @apply btn bg-muted text-foreground hover:bg-accent focus:ring-ring border border-border;
   }
   .btn-danger {
-    @apply btn bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
+    @apply btn bg-red-600 text-white hover:bg-red-500 focus:ring-red-500;
+  }
+  .btn-outline {
+    @apply btn bg-transparent border border-input text-foreground hover:bg-accent;
   }
   .input {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
+    @apply w-full px-3 py-2 bg-background border-2 border-input rounded-md text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent h-10;
   }
   .label {
-    @apply block text-sm font-medium text-gray-700 mb-1;
+    @apply block text-sm font-medium text-foreground mb-1;
   }
   .card {
-    @apply bg-white rounded-xl shadow-sm border border-gray-200 p-6;
+    @apply bg-card text-card-foreground rounded-[0.625rem] border border-border p-6;
+  }
+  .cut {
+    clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 0 100%);
+  }
+  .cut-frame {
+    @apply cut bg-border p-px;
+  }
+  .cut-card {
+    @apply cut bg-card;
+  }
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border border-border bg-muted text-muted-foreground;
+  }
+  .badge-primary {
+    @apply badge bg-primary text-primary-foreground border-transparent;
+  }
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground;
+  }
+  .eyebrow-accent {
+    @apply text-xs font-semibold uppercase tracking-[0.18em] text-primary;
+  }
+  /* Hackathon / software listing system (devpost.com experience) */
+  .listing-card {
+    @apply block overflow-hidden rounded-[0.625rem] border border-border bg-card transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg;
+  }
+  .listing-thumb {
+    @apply relative flex h-36 items-center justify-center overflow-hidden text-white;
+  }
+  .chip {
+    @apply inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-border bg-card px-3.5 py-1.5 text-sm font-medium text-muted-foreground transition-all duration-300 hover:border-primary/50 hover:text-foreground;
+  }
+  .chip-active {
+    @apply border-primary bg-primary text-primary-foreground hover:text-primary-foreground;
+  }
+  .search-wrap {
+    @apply relative flex-1;
+  }
+  .search-input {
+    @apply h-12 w-full rounded-lg border border-input bg-card pl-11 pr-4 text-[15px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring;
+  }
+  .ribbon {
+    @apply absolute left-3 top-3 rounded px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white;
+  }
+}
+
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@layer utilities {
+  .animate-marquee {
+    animation: marquee 32s linear infinite;
   }
 }

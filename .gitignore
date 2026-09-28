@@ -61,10 +61,51 @@ docker-compose.override.yml
 uploads/
 media/
 
+# Demo / footage folders — only src/ and tests/ are tracked work;
+# everything else regenerable stays out of git.
+demo-5min/
+demo-video-tmp/
+e2e-footage/
+
+# Video
+*.mp4
+*.webm
+*.mkv
+*.avi
+*.mov
+
+# Audio
+*.mp3
+*.wav
+*.ogg
+*.flac
+*.m4a
+*.aac
+
+# Images (source artwork under src/ stays tracked via the negation)
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.ico
+*.webp
+*.tiff
+*.svg
+!src/**/*.svg
+
+# Data probes / exports
+*.csv
+
 # Temporary
 tmp/
 temp/
 *.tmp
+*.temp
+*.bak
+*.orig
+*.tsbuildinfo
+next-env.d.ts
 plan_temp.md
 
 # Art-framework (agent scaffolding, not part of submission)

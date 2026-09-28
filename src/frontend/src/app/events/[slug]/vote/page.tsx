@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import AppShell from '@/components/AppShell';
 import { ArrowRight, Ticket, Star } from 'lucide-react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -73,19 +74,14 @@ export default function VotePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="border-b border-gray-200 bg-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center">
-            <Link href={`/events/${slug}/gallery`} className="text-gray-500 hover:text-gray-700">
-              <ArrowRight className="h-5 w-5 rotate-180" />
-            </Link>
-            <h1 className="ml-4 text-xl font-bold text-gray-900">Community Vote</h1>
-          </div>
-        </div>
-      </header>
-
+    <AppShell>
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-6 flex items-center">
+          <Link href={`/events/${slug}/gallery`} className="text-gray-500 hover:text-gray-700" aria-label="Back to gallery">
+            <ArrowRight className="h-5 w-5 rotate-180" />
+          </Link>
+          <h1 className="ml-4 text-xl font-bold text-gray-900">Community Vote</h1>
+        </div>
         {!token ? (
           <div className="card max-w-md mx-auto">
             <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
@@ -137,6 +133,6 @@ export default function VotePage() {
           </div>
         )}
       </main>
-    </div>
+    </AppShell>
   );
 }

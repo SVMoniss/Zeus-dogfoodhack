@@ -5,8 +5,8 @@ export const dynamic = 'force-dynamic';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { AuthProvider, useAuth } from '../lib/auth';
-import { Trophy } from 'lucide-react';
+import { useAuth } from '@/lib/auth';
+import { BrandLockup } from '@/components/Brand';
 
 function RegisterForm() {
   const router = useRouter();
@@ -50,9 +50,8 @@ function RegisterForm() {
     <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-gray-50">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <Link href="/" className="flex items-center justify-center space-x-2 mb-8">
-            <Trophy className="h-12 w-12 text-primary-600" />
-            <span className="text-2xl font-bold text-gray-900">DOGFOOD 2026</span>
+          <Link href="/" className="mb-8 flex items-center justify-center" aria-label="DOGFOOD 2026 home">
+            <BrandLockup markSize={44} textClassName="text-2xl text-gray-900" />
           </Link>
           <h2 className="text-3xl font-bold text-gray-900">Create your account</h2>
           <p className="mt-2 text-gray-600">
@@ -144,9 +143,5 @@ function RegisterForm() {
   );
 }
 export default function RegisterPage() {
-  return (
-    <AuthProvider>
-      <RegisterForm />
-    </AuthProvider>
-  );
+  return <RegisterForm />;
 }

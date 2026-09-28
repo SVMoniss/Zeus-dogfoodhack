@@ -758,9 +758,11 @@ async def ranking_comparison(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_organizer),
     k: int = 3,
+    exclude_judge: Optional[UUID] = None,
 ):
     from app.services import normalization as norm_svc
     from app.services import ranking as rank_svc
+    import statistics
 
     event = await resolve_event(db, event_identifier)
     if not event:
@@ -769,7 +771,9 @@ async def ranking_comparison(
     scores_result = await db.execute(
         select(Score).where(Score.event_id == event.id)
     )
-    scores = scores_result.scalars().all()
+    scores = list(scores_result.scalars().all())
+    if exclude_judge:
+        scores = [s for s in scores if s.judge_id != exclude_judge]
     crit_result = await db.execute(
         select(JudgingCriteria).where(JudgingCriteria.event_id == event.id)
     )
@@ -807,6 +811,63 @@ async def ranking_comparison(
         "borda": rank_svc.order_of(borda_scores) if borda_scores else [],
     }
     verdict, explanation, above, below = rank_svc.robustness(orders, max(k, 1))
+
+    # Review coverage + data-quality flags (demo scenario: 3 reviews/project).
+    reviewers: dict = {}
+    for s in scores:
+        reviewers.setdefault(str(s.project_id), set()).add(str(s.judge_id))
+    review_counts = {pid: len(jids) for pid, jids in reviewers.items()}
+    low_confidence = sorted(pid for pid, n in review_counts.items() if n < 3)
+
+    # Duplicate submissions: same title (case-insensitive), counted once —
+    # the earliest-submitted project is kept, later ones are dropped from
+    # every method's ordering.
+    proj_rows = (
+        await db.execute(
+            select(Project).where(Project.event_id == event.id, Project.is_draft == False)  # noqa: E712
+        )
+    ).scalars().all()
+    dup_groups: dict = {}
+    for p in proj_rows:
+        dup_groups.setdefault((p.title or "").casefold().strip(), []).append(p)
+    duplicates = []
+    dropped: set = set()
+    for title_key, group in dup_groups.items():
+        if len(group) < 2:
+            continue
+        group.sort(key=lambda p: (p.submitted_at or p.created_at, str(p.id)))
+        kept = group[0]
+        drop_ids = [str(p.id) for p in group[1:]]
+        dropped.update(drop_ids)
+        duplicates.append(
+            {
+                "title": kept.title,
+                "project_ids": [str(p.id) for p in group],
+                "kept_project_id": str(kept.id),
+            }
+        )
+    if dropped:
+        orders = {m: [p for p in o if p not in dropped] for m, o in orders.items()}
+        above = [p for p in above if p not in dropped]
+        below = [p for p in below if p not in dropped]
+        verdict, explanation, above, below = rank_svc.robustness(orders, max(k, 1))
+
+    # Per-judge stats: constant scorers (std 0 over 2+ reviews) need flagging
+    # because z-score normalization cannot differentiate their projects.
+    by_judge_vals: dict = {}
+    for s in scores:
+        by_judge_vals.setdefault(str(s.judge_id), []).append(s.score)
+    judge_stats = {}
+    for jid, vals in by_judge_vals.items():
+        mean = statistics.mean(vals)
+        std = statistics.stdev(vals) if len(vals) > 1 else 0.0
+        judge_stats[jid] = {
+            "reviews": len(vals),
+            "mean": round(mean, 2),
+            "std": round(std, 2),
+            "constant": len(vals) > 1 and std == 0.0,
+        }
+
     return {
         "event_id": str(event.id),
         "methods": orders,
@@ -814,6 +875,11 @@ async def ranking_comparison(
         "verdict": verdict,
         "explanation": explanation,
         "warnings": {"bradley_terry": bt_warning},
+        "review_counts": review_counts,
+        "low_confidence": low_confidence,
+        "duplicates": duplicates,
+        "judge_stats": judge_stats,
+        "excluded_judge": str(exclude_judge) if exclude_judge else None,
     }
 
 

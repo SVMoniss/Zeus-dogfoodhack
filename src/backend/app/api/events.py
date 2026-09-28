@@ -12,7 +12,8 @@ from app.models import Event, Track, User
 from app.models.enums import UserRole
 from app.schemas.event import (
     EventCreate, EventUpdate, EventResponse, EventListResponse,
-    TrackCreate, TrackUpdate, TrackResponse
+    TrackCreate, TrackUpdate, TrackResponse,
+    check_submission_window, check_voting_window,
 )
 
 router = APIRouter(prefix="/api/events", tags=["events"])
@@ -91,6 +92,23 @@ async def update_event(
         raise HTTPException(status_code=404, detail="Event not found")
     
     update_data = event_data.model_dump(exclude_unset=True)
+    # Validate the merged window: partial updates are checked against
+    # stored values, since the schema only sees the payload.
+    merged_open = update_data.get("submissions_open_at", event.submissions_open_at)
+    merged_close = update_data.get("submissions_close_at", event.submissions_close_at)
+    if "submissions_open_at" in update_data or "submissions_close_at" in update_data:
+        try:
+            check_submission_window(merged_open, merged_close)
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e))
+    merged_vopen = update_data.get("voting_open_at", event.voting_open_at)
+    merged_vclose = update_data.get("voting_close_at", event.voting_close_at)
+    if "voting_open_at" in update_data or "voting_close_at" in update_data:
+        if merged_vopen and merged_vclose:
+            try:
+                check_voting_window(merged_vopen, merged_vclose)
+            except ValueError as e:
+                raise HTTPException(status_code=422, detail=str(e))
     for field, value in update_data.items():
         setattr(event, field, value)
 

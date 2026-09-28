@@ -120,6 +120,45 @@ A prize boundary (top-k set, default k=3) is **ROBUST** when every method
 agrees on the set above the line, else **FRAGILE** with the disagreeing
 methods named. With no scored projects the verdict is FRAGILE.
 
+## Demo scenario: Grand Jury (30 judges × 40 projects)
+
+Fixture-scale variant of the same idea (seed `20260929`, script
+`demo-5min/seed_grand_jury.py`): project *i* (0-based) belongs to cycle
+*c = i//10* and is reviewed by judges *{(3i+11c)%30, +1, +2}*, so every
+10-project cycle covers all 30 judges exactly once — 4 reviews per judge,
+120 slots. Biases: lenient +1 (idx 5, 14, 23), harsh −1 (idx 2, 17, 27),
+idx 29 constant 3. Projects #11 and #33 ship with 2 reviews (118 rows); a
+second "Solar Kiosk" is flagged and counted once. Single track, one
+criterion, k=3. Observed result: FRAGILE — raw #2 "Mural Mile" falls to
+calibrated #3. Video: `e2e-demo-grand-jury.mp4` (3:05, narrated twin
+included), rebuilt via scenario env vars on `demo-5min/make.mjs`.
+
+## Demo scenario: Calibration Cup (4 judges × 30 projects)
+
+The 5-minute demo runs its own scenario (seed `20260928`, script
+`demo-5min/seed_judging_demo.py`); the acceptance fixtures stay loaded
+untouched. Reproduce with `python demo-5min/seed_judging_demo.py`.
+
+- **Event**: single track ("General") and one criterion ("Overall", weight
+  100) — track matching is deliberately relaxed for the demo and stated
+  on screen. Prize boundary k=3.
+- **Assignment**: project *i* (1-based) skips judge *(i mod 4)* over judges
+  A (fair), B (lenient +1), C (harsh −1), D (constant 3). Every pair of
+  judges shares ~22 projects, so the offset model is well connected.
+  The plan is written to the audit trail as `assignment.generate` with
+  the seed, the rule and the resulting loads (22/22/21/23 — C and A each
+  lose one review to the unfinished batch below).
+- **Awkward cases, all seeded**: D scores a constant 3.0 (std 0 →
+  normalization falls back to raw; `/ranking` flags
+  `constant: true` and accepts `?exclude_judge=` to show results with
+  and without them); projects #7 and #19 ship with only 2 reviews
+  (`low_confidence`); a second "Solar Kiosk" is submitted by another
+  team, flagged in `duplicates`, and excluded from every method's
+  ordering (`kept_project_id` = earliest submitted).
+- **Observed result**: boundary verdict FRAGILE — raw #2 "Food Rescue
+  Route" (lenient-judge inflation) falls to calibrated #5, and the
+  constant judge's exclusion swaps the calibrated #3.
+
 ## CSV Export Format
 
 The organizer can download results as CSV with columns:

@@ -85,6 +85,54 @@ Copy these into `.dogfood.toml` and run the acceptance checker:
 python3 run.py .dogfood.toml > acceptance-report.txt
 ```
 
+## Demo video (3:56)
+
+`e2e-demo-5min.mp4` — one combined cut: landing page, full role lifecycle
+(participant submits, judge scores, organizer publishes), judge calibration,
+then T1/T2 validation in the terminal. The lifecycle runs on the Calibration
+Cup demo event: 4 judges × 30 projects, project *i* skips judge *(i mod 4)* (seed `20260928`,
+plan in the audit trail as `assignment.generate`). One track ("General"), one
+criterion ("Overall", weight 100) — track matching is relaxed for the demo and
+stated on screen. Awkward cases seeded on purpose: judge D scores a constant 3
+(flagged, excludable via `/ranking?exclude_judge=`), projects #7/#19 ship with
+2 reviews (`low_confidence`), and a second "Solar Kiosk" is flagged in
+`duplicates` and counted once. Observed result: boundary verdict FRAGILE —
+raw #2 "Food Rescue Route" falls to calibrated #5.
+One command rebuilds it end to end — `node demo-5min/make.mjs` narrates (offline
+TTS), records the browser tour paced to the voice (beat timestamps in
+`demo-5min/beats.json`), then muxes both cuts (dataset: `python
+demo-5min/seed_judging_demo.py`). Terminal proofs type out verbatim
+`curl`/`run.py`/CSV outputs. Claimed tiers only (T1, T2).
+`e2e-demo-5min-narrated.mp4` is the same cut with the voice mixed in
+(offline TTS, Microsoft Zira lady voice; script: `demo-5min/narrate.ps1`,
+lines: `demo-5min/narration/`).
+
+| Time | Segment |
+|---|---|
+| 0:09 | Landing page: countdown, tracks, four role doors (gallery, judging, organizer, vote) |
+| 0:48 | Calibration Cup tour: scenario note, timeline, single track, 30 projects |
+| 1:03 | Gallery: duplicate "Solar Kiosk" ×2 side by side |
+| 1:31 | Participant drafts and submits "Juror's Jukebox" live |
+| 2:09 | Audit trail: `assignment.generate` with seed 20260928 |
+| 2:19 | Progress dashboard: loads 23/22/21/23 by judge |
+| 2:40 | Judge A completes Harbor Cleanup live ("Scores saved.") |
+| 3:11 | CSV export download, gallery finale |
+| 3:23 | Terminal: `compose ps`, scenario, judge_b → 403, participant → 403, FRAGILE calibration, CSV raw-vs-calibrated rows, `run.py` 7/7 PASS, known gap (audit log has no hash chain — accepted, see THREAT-MODEL.md) |
+
+## Demo video: Grand Jury (3:05)
+
+`e2e-demo-grand-jury.mp4` — same story at fixture scale: 30 judges × 40 projects,
+3 reviews each (118 score rows, seed `20260929`, dataset: `python
+demo-5min/seed_grand_jury.py`). Triples cycle so every judge reviews exactly 4
+projects; awkward cases identical in kind (constant scorer, 2 unfinished
+batches, duplicate Solar Kiosk). Observed: FRAGILE, raw #2 "Mural Mile" →
+calibrated #3. Rebuilt with scenario env vars, e.g.
+`SCENARIO=grand-jury DEMO_PREFIX=grand-jury- EVENT_TITLE='Grand Jury'
+LIVE_EMAIL=dilan.yilmaz@example.org LIVE_PW=judgepass123 LIVE_TITLE='Repair Cafe'
+NEW_TITLE='Encore Alley' NEW_ASSERT=Encore TERMINAL_HTML=terminal3.html
+OUT_PREFIX=e2e-demo-grand-jury node demo-5min/make.mjs` (narrated twin:
+`e2e-demo-grand-jury-narrated.mp4`, Zira voice).
+
 ## Project Structure
 
 ```

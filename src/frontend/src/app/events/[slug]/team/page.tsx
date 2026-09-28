@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import AppShell from '@/components/AppShell';
 import { useAuth } from '@/lib/auth';
-import { Users, Plus, Copy, Check, ArrowRight, LogOut } from 'lucide-react';
+import { Users, Copy } from 'lucide-react';
 import { Team, TeamMember } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -13,13 +12,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 export default function TeamPage() {
   const params = useParams();
   const slug = params.slug as string;
-  const router = useRouter();
-  const { user, logout } = useAuth();
-
-  const handleLogout = async () => {
-    await logout();
-    router.push('/events');
-  };
+  const { user } = useAuth();
 
   const [teams, setTeams] = useState<Array<{ id: string; name: string; invite_code: string; max_members: number; members: TeamMember[] }>>([]);
   const [myTeam, setMyTeam] = useState<{ id: string; name: string; invite_code: string; max_members: number; members: TeamMember[] } | null>(null);
@@ -118,36 +111,16 @@ export default function TeamPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
+      <AppShell>
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        </div>
+      </AppShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="border-b border-gray-200 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link href="/events" className="text-gray-500 hover:text-gray-700">
-                <ArrowRight className="h-5 w-5 rotate-180" />
-              </Link>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">Team Management</h1>
-                <p className="text-sm text-gray-500">Create or join a team to submit projects</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <button onClick={handleLogout} className="btn-secondary flex items-center gap-2">
-                <LogOut className="h-4 w-4" />
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
+    <AppShell>
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h2 className="text-2xl font-bold mb-4">Team Management</h2>
@@ -290,6 +263,6 @@ export default function TeamPage() {
           </div>
         </div>
       </main>
-    </div>
+    </AppShell>
   );
 }
