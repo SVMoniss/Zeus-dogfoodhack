@@ -77,13 +77,15 @@ async def login(
     access_token = create_access_token({"sub": str(user.id), "role": user.role.value})
     refresh_token = create_refresh_token({"sub": str(user.id)})
     
-    # Set httpOnly cookie for session compatibility
+    # Set httpOnly cookie for session compatibility. Flags are env-gated
+    # via settings (auto: https frontend -> Secure + SameSite=None for
+    # split-domain hosts like Railway; local http -> Lax without Secure).
     response.set_cookie(
         key="session",
         value=access_token,
         httponly=True,
-        secure=False,  # Set to True in production with HTTPS
-        samesite="lax",
+        secure=settings.cookie_secure,
+        samesite=settings.cookie_samesite,
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
     
@@ -92,7 +94,11 @@ async def login(
 
 @router.post("/logout")
 async def logout(response: Response):
-    response.delete_cookie(key="session")
+    response.delete_cookie(
+        key="session",
+        secure=settings.cookie_secure,
+        samesite=settings.cookie_samesite,
+    )
     return {"message": "Logged out successfully"}
 
 

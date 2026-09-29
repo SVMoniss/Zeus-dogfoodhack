@@ -247,6 +247,34 @@ auto-normalizes to `postgresql+asyncpg://`, `DB_SSL=true` enables TLS,
 3. Play: test users `organizer@ / judge_a@ / judge_b@ / participant@dogfood.local`
    with `testpass123`. Anyone with the link can act — redeploy to reset.
 
+## Demo deploy (Railway, `demo-railway` branch)
+
+Branch `demo-railway` tracks `main` plus Railway hardening (PORT-aware
+`CMD`s, `Secure`/`SameSite=None` session cookie on https, `railway.json`
+healthchecks). Point all Railway services at this branch.
+
+1. Railway **New Project > Deploy Postgres** (needs the `vector`
+   extension for `init.sql`; if the stock image lacks it, run
+   `pgvector/pgvector:pg16` as a Docker service instead and run `init.sql`
+   against it once).
+2. **Backend service**: New Service > GitHub Repo > branch `demo-railway`,
+   root `src/backend`. Variables:
+   `DATABASE_URL=${{Postgres.DATABASE_URL}}`, `DB_SSL=true`,
+   `SECRET_KEY` (generate), `FRONTEND_URL=<frontend public URL>`,
+   `PYTHONPATH=/app`. Deploy, generate domain, note
+   `https://<backend>.up.railway.app`. Boot runs
+   `alembic upgrade head && seed.py && uvicorn` — fixtures + test users
+   reseed every boot (redeploy resets).
+3. **Frontend service**: same repo/branch, root `src/frontend`. Set
+   **both** build variable and env `NEXT_PUBLIC_API_URL=<backend URL>`
+   (the value is inlined at `next build`), then deploy + generate domain.
+4. Back in backend, set `FRONTEND_URL` to the frontend domain and redeploy
+   (strict CORS; also flips the session cookie to `Secure`/`None`).
+   Optional overrides: `COOKIE_SECURE`, `COOKIE_SAMESITE`.
+5. Play: `organizer@ / judge_a@ / judge_b@ / participant@dogfood.local` /
+   `testpass123`. Verify `/health`, `/health/ready`, gallery (public),
+   judge isolation (`judge_b` → 403 on peer scores), CSV export.
+
 ## Documentation
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) - System design and rationale
