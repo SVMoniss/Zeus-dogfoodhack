@@ -2,9 +2,11 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install dependencies
+# Install dependencies (including devDeps: `next build` needs typescript,
+# tailwindcss, postcss. Railway builds with NODE_ENV=production, which makes
+# plain `npm install` skip devDependencies and break the build.)
 COPY package*.json ./
-RUN npm install
+RUN npm install --include=dev
 
 # Public API base is inlined at build time. Default points at the live Railway
 # demo backend so a plain deploy works with no extra config; override with
