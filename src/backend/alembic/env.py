@@ -19,12 +19,18 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Set the database URL from environment (use sync driver for alembic)
-database_url = os.getenv("DATABASE_URL")
-if database_url:
-    # Convert asyncpg to psycopg2 for alembic
-    sync_url = database_url.replace("postgresql+asyncpg://", "postgresql+psycopg2://")
-    config.set_main_option("sqlalchemy.url", sync_url)
+# Set the database URL from the app settings (use sync driver for alembic).
+# NOTE: do NOT use raw os.getenv("DATABASE_URL") here. Managed providers hand
+# out bare `postgres://` URLs, which SQLAlchemy 2.x maps to the psycopg (v3)
+# driver that isn't installed (we ship psycopg2). settings.DATABASE_URL is
+# already normalized to `postgresql+asyncpg://`, honors DATABASE_PRIVATE_URL,
+# and fails fast with a clear error when no database is configured.
+from app.core.config import settings
+
+sync_url = settings.DATABASE_URL.replace(
+    "postgresql+asyncpg://", "postgresql+psycopg2://"
+)
+config.set_main_option("sqlalchemy.url", sync_url)
 
 target_metadata = Base.metadata
 
@@ -43,9 +49,12 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
+    # Public managed-Postgres URLs need TLS; private-network/local ones don't.
+    ssl_args = {"sslmode": "require"} if settings.db_connect_args.get("ssl") else {}
     connectable = create_engine(
         config.get_main_option("sqlalchemy.url"),
         poolclass=pool.NullPool,
+        connect_args=ssl_args,
     )
 
     with connectable.connect() as connection:
