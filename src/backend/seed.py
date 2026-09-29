@@ -11,7 +11,7 @@ from passlib.context import CryptContext
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import select
+from sqlalchemy import inspect, select
 
 from app.core.config import settings
 from app.core.database import Base
@@ -64,8 +64,29 @@ async def seed():
     engine = create_async_engine(settings.DATABASE_URL, echo=False)
     AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     
+    async with engine.connect() as conn:
+        fresh_db = await conn.run_sync(
+            lambda c: "events" not in inspect(c).get_table_names()
+        )
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+    if fresh_db:
+        # Fresh database: create_all above already built the full schema from
+        # the current models (i.e. at migration head), so record the version
+        # instead of running the incremental ALTERs in 001..007, which assume
+        # pre-existing tables and crash on an empty database. Existing
+        # databases are left alone so `alembic upgrade head` still applies
+        # any genuinely pending migrations.
+        from alembic import command
+        from alembic.config import Config
+
+        alembic_cfg = Config(
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "alembic.ini")
+        )
+        command.stamp(alembic_cfg, "head")
+        print("Fresh database: schema created, stamped at migration head.")
     
     async with AsyncSessionLocal() as db:
         # Load fixtures
