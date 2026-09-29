@@ -34,7 +34,12 @@ class Settings(BaseSettings):
 
     def model_post_init(self, _context) -> None:
         url = (self.DATABASE_URL or "").strip().strip("'\"")
-        if not url and self.DATABASE_PRIVATE_URL:
+        # The localhost default is only meaningful for local docker/dev. On
+        # Railway, an explicit DATABASE_PRIVATE_URL always wins over an empty
+        # or still-default DATABASE_URL (e.g. after deleting a broken
+        # `${{...}}` reference variable), so the app can never silently boot
+        # against localhost in production.
+        if (not url or url == "postgresql+asyncpg://dogfood:dogfood@localhost:5432/dogfood") and self.DATABASE_PRIVATE_URL:
             url = self.DATABASE_PRIVATE_URL.strip().strip("'\"")
         if url.startswith("postgres://"):
             url = "postgresql+asyncpg://" + url[len("postgres://"):]
