@@ -61,7 +61,9 @@ async def get_or_create(model, db, **kwargs):
 
 
 async def seed():
-    engine = create_async_engine(settings.DATABASE_URL, echo=False)
+    engine = create_async_engine(
+        settings.DATABASE_URL, echo=False, connect_args=settings.db_connect_args
+    )
     AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     
     async with engine.connect() as conn:

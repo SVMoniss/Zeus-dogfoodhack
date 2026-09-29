@@ -5,6 +5,13 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql+asyncpg://dogfood:dogfood@localhost:5432/dogfood"
+    # Railway exposes both a public URL and a private-network URL. Prefer an
+    # explicitly set DATABASE_URL, fall back to the private one (internal
+    # traffic needs no TLS). An *empty* DATABASE_URL (e.g. a misspelled
+    # `${{Service.DATABASE_URL}}` reference, which Railway resolves to "")
+    # counts as unset so boot fails with a clear message instead of a
+    # cryptic `Could not parse SQLAlchemy URL` from deep in the stack.
+    DATABASE_PRIVATE_URL: Optional[str] = None
     # Managed providers (Render, Railway, …) hand out bare `postgres://` URLs;
     # normalize to the asyncpg driver scheme the engine expects.
     DB_SSL: bool = False
@@ -26,10 +33,30 @@ class Settings(BaseSettings):
         case_sensitive = True
 
     def model_post_init(self, _context) -> None:
-        if self.DATABASE_URL.startswith("postgres://"):
-            self.DATABASE_URL = "postgresql+asyncpg://" + self.DATABASE_URL[len("postgres://"):]
-        elif self.DATABASE_URL.startswith("postgresql://"):
-            self.DATABASE_URL = "postgresql+asyncpg://" + self.DATABASE_URL[len("postgresql://"):]
+        url = (self.DATABASE_URL or "").strip().strip("'\"")
+        if not url and self.DATABASE_PRIVATE_URL:
+            url = self.DATABASE_PRIVATE_URL.strip().strip("'\"")
+        if url.startswith("postgres://"):
+            url = "postgresql+asyncpg://" + url[len("postgres://"):]
+        elif url.startswith("postgresql://"):
+            url = "postgresql+asyncpg://" + url[len("postgresql://"):]
+        if not url:
+            raise RuntimeError(
+                "DATABASE_URL is empty: the backend has no database to connect to. "
+                "On Railway, add a Postgres service, then in the backend service "
+                "Variables use '+ New Variable > Add Reference > <postgres service> "
+                "> DATABASE_URL' (a hand-typed ${{...}} with a wrong service name "
+                "resolves to an empty string)."
+            )
+        self.DATABASE_URL = url
+
+    @property
+    def db_connect_args(self) -> dict:
+        # Railway private-network hosts (*.railway.internal) speak plain
+        # Postgres; the public proxy requires TLS.
+        if "railway.internal" in self.DATABASE_URL:
+            return {}
+        return {"ssl": True} if self.DB_SSL else {}
 
     @property
     def cookie_secure(self) -> bool:
