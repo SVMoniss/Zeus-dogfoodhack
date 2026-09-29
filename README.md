@@ -236,7 +236,7 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## Team
 
-Built for DOGFOOD 2026 Hackathon by [Team Name].
+Built for DOGFOOD 2026 Hackathon by [ZEUS].
 
 ---
 
