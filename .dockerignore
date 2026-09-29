@@ -1,0 +1,8 @@
+# Root build context is the frontend only (this Dockerfile serves src/frontend
+# when the Railway service root is the repo root). Everything else stays out
+# of the image for small, fast builds.
+*
+!src/frontend/
+!src/frontend/**
+!Dockerfile
+!.dockerignore

@@ -2,9 +2,10 @@
   "name": "dogfoodhack",
   "version": "1.0.0",
   "description": "> **Build the platform that will judge you.**",
-  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npm --prefix src/frontend install --include=dev && npm --prefix src/frontend run build",
+    "start": "npm --prefix src/frontend start -- -p ${PORT:-3000}"
   },
   "keywords": [],
   "author": "",
