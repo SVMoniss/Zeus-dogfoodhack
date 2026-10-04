@@ -52,6 +52,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           >
             {link('/projects', 'Projects')}
             {link('/events', 'Events')}
+            {link('/blog', 'Blog')}
             {link('/events/sample-hack-2026/vote', 'Vote')}
             {!user && link('/login', 'Sign in')}
             {user?.role === 'participant' && link('/dashboard', 'Dashboard')}

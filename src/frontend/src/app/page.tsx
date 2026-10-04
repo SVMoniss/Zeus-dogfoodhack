@@ -15,6 +15,7 @@ import {
 import { useAuth } from '@/lib/auth';
 import { API_URL, DEFAULT_EVENT_SLUG } from '@/lib/api';
 import { BrandLockup } from '@/components/Brand';
+import { BLOG_POSTS } from '@/lib/blog';
 
 const SUBMISSIONS_CLOSE_ISO = '2026-03-01T18:00:00Z';
 const DEADLINE = Date.parse(SUBMISSIONS_CLOSE_ISO);
@@ -199,10 +200,12 @@ export default function HomePage() {
             <a href="#faq" className="transition-colors hover:text-foreground">FAQ</a>
             <Link href="/projects" className="transition-colors hover:text-foreground">Projects</Link>
             <Link href="/events" className="transition-colors hover:text-foreground">Events</Link>
+            <Link href="/blog" className="transition-colors hover:text-foreground">Blog</Link>
           </nav>
           <nav className="flex items-center gap-5 text-sm font-medium text-muted-foreground lg:hidden" aria-label="Main navigation">
             <Link href="/projects" className="transition-colors hover:text-foreground">Projects</Link>
             <Link href="/events" className="transition-colors hover:text-foreground">Events</Link>
+            <Link href="/blog" className="transition-colors hover:text-foreground">Blog</Link>
           </nav>
           <div className="ml-auto flex items-center gap-3">
             {user ? (
@@ -392,6 +395,38 @@ export default function HomePage() {
               </article>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-6xl px-5 py-14 sm:py-20" id="blog">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div className="max-w-2xl">
+            <p className="eyebrow-accent">DOGFOOD Blog</p>
+            <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Build logs from the team</h2>
+            <p className="mt-3 text-muted-foreground">Setup guides, judging math and self-host notes — same format as docker.com/blog.</p>
+          </div>
+          <Link href="/blog" className="text-link text-sm">
+            View all posts
+            <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+        </div>
+        <div className="mt-10 grid gap-5 md:grid-cols-3">
+          {BLOG_POSTS.slice(0, 3).map((p) => (
+            <Link key={p.slug} href={`/blog/${p.slug}`} className="listing-card group flex flex-col">
+              <div aria-hidden="true" className={`relative h-32 bg-gradient-to-br ${p.gradient}`}>
+                <span className="ribbon bg-black/45">{p.category}</span>
+              </div>
+              <div className="flex flex-1 flex-col p-5">
+                <p className="text-[13px] text-muted-foreground">{p.date} · {p.readMinutes} min read</p>
+                <h3 className="mt-1.5 font-bold leading-snug group-hover:text-primary">{p.title}</h3>
+                <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">{p.excerpt}</p>
+                <span className="text-link mt-4 text-sm">
+                  Read now
+                  <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+                </span>
+              </div>
+            </Link>
+          ))}
         </div>
       </section>
 

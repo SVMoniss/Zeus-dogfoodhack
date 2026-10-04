@@ -31,9 +31,12 @@ export default function RootLayout({
       <body className="antialiased bg-background text-foreground font-sans min-h-screen flex flex-col">
         <AuthProvider>{children}</AuthProvider>
         <footer className="border-t border-border py-6">
-          <div className="mx-auto flex max-w-6xl items-center gap-2.5 px-5 font-mono text-xs text-muted-foreground">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-5 font-mono text-xs text-muted-foreground">
             <TrophyMark size={20} />
             <span>DOGFOOD 2026 — self-hostable hackathon judging. Run it yourself with Docker Compose.</span>
+            <a href="/blog" className="ml-auto font-sans font-medium text-primary hover:underline underline-offset-4">
+              DOGFOOD Blog
+            </a>
           </div>
         </footer>
       </body>

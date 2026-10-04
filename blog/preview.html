@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Build the Platform That Will Judge You — Local Review</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; background: #0b0e14; color: #e6e9ef; }
+  header { position: sticky; top: 0; background: #11161f; border-bottom: 1px solid #232b38; padding: 12px 20px; display: flex; gap: 12px; align-items: center; z-index: 10; }
+  header .badge { background: #22c55e; color: #04140a; font-weight: 700; font-size: 12px; padding: 4px 8px; border-radius: 999px; }
+  header a { color: #93c5fd; text-decoration: none; font-size: 14px; }
+  main { max-width: 860px; margin: 0 auto; padding: 32px 20px 80px; }
+  #content { background: #11161f; border: 1px solid #232b38; border-radius: 12px; padding: 32px; }
+  #content h1, #content h2, #content h3 { color: #fff; line-height: 1.25; }
+  #content a { color: #93c5fd; }
+  #content code { background: #0b0e14; padding: 2px 6px; border-radius: 6px; font-size: 0.9em; }
+  #content pre { background: #0b0e14; padding: 16px; border-radius: 8px; overflow: auto; border: 1px solid #232b38; }
+  #content pre code { background: transparent; padding: 0; }
+  #content blockquote { border-left: 4px solid #22c55e; margin: 16px 0; padding: 8px 16px; background: #0f1a13; border-radius: 0 8px 8px 0; }
+  #content table { border-collapse: collapse; width: 100%; margin: 16px 0; font-size: 14px; }
+  #content th, #content td { border: 1px solid #2a3446; padding: 8px 10px; text-align: left; }
+  #content th { background: #1a2230; }
+  #error { color: #fca5a5; }
+</style>
+</head>
+<body>
+<header>
+  <span class="badge">LOCAL REVIEW</span>
+  <strong>blog/</strong>
+  <a href="preview.html?file=build-the-platform-that-will-judge-you.md">build story</a>
+  <a href="preview.html?file=setup-project-from-main.md">setup guide (main)</a>
+  <a id="rawlink" href="setup-project-from-main.md">view raw .md</a>
+</header>
+<main>
+  <div id="content">Loading post…</div>
+</main>
+<script>
+  const params = new URLSearchParams(location.search);
+  const file = params.get('file') || 'setup-project-from-main.md';
+  document.getElementById('rawlink').href = file;
+  fetch(file)
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+    .then(md => {
+      // strip frontmatter for preview
+      const cleaned = md.replace(/^---[\s\S]*?---\n/, '');
+      document.getElementById('content').innerHTML = marked.parse(cleaned);
+      document.title = 'Review: ' + (md.match(/title:\s*"(.*?)"/) || [])[1];
+    })
+    .catch(e => {
+      document.getElementById('content').innerHTML = '<p id="error">Failed to load markdown: ' + e.message + '</p>';
+    });
+</script>
+</body>
+</html>
