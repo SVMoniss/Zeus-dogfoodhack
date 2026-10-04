@@ -11,13 +11,9 @@
 name: azure-deploy
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'src/backend/**'
-      - 'src/frontend/**'
-      - 'infra/**'
-      - '.github/workflows/azure-deploy.yml'
+  # Push deploys disabled: the student tenant has no federated credentials,
+  # so GitHub-hosted runs cannot log in to Azure. The frontend ships through
+  # the portal-linked SWA workflow instead. Keep manual dispatch for maintainers.
   workflow_dispatch: {}
 
 env:
