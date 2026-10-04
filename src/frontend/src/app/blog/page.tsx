@@ -35,19 +35,15 @@ function FeaturedCard({ post }: { post: BlogPost }) {
     >
       <div
         aria-hidden="true"
-        className={`relative flex min-h-56 items-end bg-gradient-to-br p-6 text-white md:min-h-72 ${post.gradient}`}
+        className="relative min-h-56 overflow-hidden md:min-h-72"
       >
-        <span className="badge border-white/30 bg-white/15 text-white">{post.category}</span>
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 opacity-20"
-          style={{
-            backgroundImage:
-              'linear-gradient(to right, rgba(255,255,255,.5) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.5) 1px, transparent 1px)',
-            backgroundSize: '36px 36px',
-            maskImage: 'radial-gradient(ellipse 90% 80% at 20% 100%, black 30%, transparent 75%)',
-          }}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={post.image}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
         />
+        <span className="badge absolute bottom-6 left-6 border-white/30 bg-black/45 text-white">{post.category}</span>
       </div>
       <div className="flex flex-col p-6 sm:p-8">
         <p className="text-sm text-muted-foreground">
@@ -78,7 +74,13 @@ function PostCard({ post }: { post: BlogPost }) {
       className="listing-card group flex flex-col"
       aria-label={`Read: ${post.title}`}
     >
-      <div aria-hidden="true" className={`relative h-36 bg-gradient-to-br ${post.gradient}`}>
+      <div aria-hidden="true" className="relative h-36 overflow-hidden">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={post.image}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+        />
         <span className="ribbon bg-black/45">{post.category}</span>
       </div>
       <div className="flex flex-1 flex-col p-5">

@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-label="3D ranking bars cover">
+  <defs>
+    <linearGradient id="r-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#17082e"/>
+      <stop offset="1" stop-color="#6d28d9"/>
+    </linearGradient>
+    <linearGradient id="r-b1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f0abfc"/>
+      <stop offset="1" stop-color="#a21caf"/>
+    </linearGradient>
+    <linearGradient id="r-b2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#67e8f9"/>
+      <stop offset="1" stop-color="#0e7490"/>
+    </linearGradient>
+    <linearGradient id="r-b3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#bef264"/>
+      <stop offset="1" stop-color="#4d7c0f"/>
+    </linearGradient>
+    <linearGradient id="r-b4" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fdba74"/>
+      <stop offset="1" stop-color="#c2410c"/>
+    </linearGradient>
+    <radialGradient id="r-shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000000" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="800" height="450" fill="url(#r-bg)"/>
+  <g stroke="#e879f9" stroke-opacity="0.16">
+    <path d="M0 120 H800 M0 200 H800 M0 280 H800"/>
+  </g>
+  <circle cx="120" cy="90" r="110" fill="#e879f9" opacity="0.12"/>
+  <ellipse cx="400" cy="400" rx="280" ry="24" fill="url(#r-shadow)"/>
+  <!-- 3D bars -->
+  <g>
+    <rect x="200" y="250" width="70" height="140" fill="url(#r-b1)"/>
+    <polygon points="200,250 235,225 305,225 270,250" fill="#f5d0fe"/>
+    <rect x="270" y="250" width="35" height="140" fill="#701a75" opacity="0.85"/>
+    <rect x="330" y="190" width="70" height="200" fill="url(#r-b2)"/>
+    <polygon points="330,190 365,165 435,165 400,190" fill="#a5f3fc"/>
+    <rect x="400" y="190" width="35" height="200" fill="#155e75" opacity="0.85"/>
+    <rect x="460" y="140" width="70" height="250" fill="url(#r-b3)"/>
+    <polygon points="460,140 495,115 565,115 530,140" fill="#ecfccb"/>
+    <rect x="530" y="140" width="35" height="250" fill="#365314" opacity="0.85"/>
+  </g>
+  <!-- calibration curve -->
+  <path d="M120 330 C 260 330, 300 250, 420 240 S 620 180, 700 120"
+        fill="none" stroke="#f0abfc" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="420" cy="240" r="12" fill="#ffffff"/>
+  <circle cx="420" cy="240" r="6" fill="#a21caf"/>
+  <circle cx="620" cy="178" r="9" fill="#bef264"/>
+  <!-- floating number chips -->
+  <g font-family="monospace" font-size="22" font-weight="bold">
+    <rect x="560" y="60" width="90" height="44" rx="10" fill="#ffffff" opacity="0.92"/>
+    <text x="605" y="90" text-anchor="middle" fill="#6d28d9">#2→5</text>
+    <rect x="140" y="300" width="110" height="44" rx="10" fill="#ffffff" opacity="0.92"/>
+    <text x="195" y="330" text-anchor="middle" fill="#6d28d9">FRAGILE</text>
+  </g>
+  <rect x="330" y="230" width="70" height="14" rx="7" fill="url(#r-b4)" opacity="0.9"/>
+</svg>

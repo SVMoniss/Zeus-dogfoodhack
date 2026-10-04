@@ -51,6 +51,8 @@ export interface BlogPost {
   featured?: boolean;
   tags: string[];
   gradient: string;
+  /** Cover artwork in public/blog (Docker-blog style featured image). */
+  image: string;
   blocks: BlogBlock[];
 }
 
@@ -76,6 +78,7 @@ export const BLOG_POSTS: BlogPost[] = [
     featured: true,
     tags: ['docker-compose', 'fastapi', 'nextjs', 'postgres', 'pgvector', 'setup'],
     gradient: 'from-[#1F78D1] via-[#0A2A52] to-[#0A2A52]',
+    image: '/blog/cover-setup.svg',
     blocks: [
       {
         heading: 'The one command',
@@ -132,6 +135,7 @@ export const BLOG_POSTS: BlogPost[] = [
     readMinutes: 11,
     tags: ['hackathon', 'judging-system', 'build-in-public', 'dogfood2026'],
     gradient: 'from-[#F59E0B] via-[#B45309] to-[#0A2A52]',
+    image: '/blog/cover-build-story.svg',
     blocks: [
       {
         heading: 'The prompt',
@@ -169,6 +173,7 @@ export const BLOG_POSTS: BlogPost[] = [
     readMinutes: 8,
     tags: ['ranking', 'normalization', 'z-score', 'bradley-terry', 'borda'],
     gradient: 'from-[#0A2A52] via-[#1F78D1] to-[#22c55e]',
+    image: '/blog/cover-ranking.svg',
     blocks: [
       {
         heading: 'The problem with averages',
@@ -205,6 +210,7 @@ export const BLOG_POSTS: BlogPost[] = [
     readMinutes: 6,
     tags: ['security', 'auth', 'fastapi', 'rbac'],
     gradient: 'from-[#7c2d12] via-[#0A2A52] to-[#1F78D1]',
+    image: '/blog/cover-isolation.svg',
     blocks: [
       {
         heading: 'The rule',
@@ -236,6 +242,7 @@ export const BLOG_POSTS: BlogPost[] = [
     readMinutes: 7,
     tags: ['voting', 'anti-abuse', 'community'],
     gradient: 'from-[#22c55e] via-[#0A2A52] to-[#1F78D1]',
+    image: '/blog/cover-voting.svg',
     blocks: [
       {
         heading: 'Fair ballots',
@@ -265,6 +272,7 @@ export const BLOG_POSTS: BlogPost[] = [
     readMinutes: 7,
     tags: ['api', 'webhooks', 'certificates', 'integrations'],
     gradient: 'from-[#1F78D1] via-[#7c3aed] to-[#0A2A52]',
+    image: '/blog/cover-integrations.svg',
     blocks: [
       {
         heading: 'API and webhooks',
@@ -293,6 +301,7 @@ export const BLOG_POSTS: BlogPost[] = [
     readMinutes: 5,
     tags: ['demo', 'playwright', 'reproducibility'],
     gradient: 'from-[#0A2A52] via-[#F59E0B] to-[#22c55e]',
+    image: '/blog/cover-demos.svg',
     blocks: [
       {
         heading: 'Two scenarios',
@@ -323,6 +332,7 @@ export const BLOG_POSTS: BlogPost[] = [
     readMinutes: 6,
     tags: ['security', 'threat-model', 'transparency'],
     gradient: 'from-[#334155] via-[#0A2A52] to-[#1F78D1]',
+    image: '/blog/cover-threat.svg',
     blocks: [
       {
         heading: 'Deliberately accepted',

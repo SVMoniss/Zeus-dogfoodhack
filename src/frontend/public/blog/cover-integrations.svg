@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-label="3D API key network cover">
+  <defs>
+    <linearGradient id="a-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#041a3a"/>
+      <stop offset="1" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="a-key" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#cffafe"/>
+      <stop offset="0.5" stop-color="#67e8f9"/>
+      <stop offset="1" stop-color="#0891b2"/>
+    </linearGradient>
+    <linearGradient id="a-node" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ddd6fe"/>
+      <stop offset="1" stop-color="#7c3aed"/>
+    </linearGradient>
+    <radialGradient id="a-shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000000" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="800" height="450" fill="url(#a-bg)"/>
+  <circle cx="700" cy="80" r="120" fill="#67e8f9" opacity="0.12"/>
+  <ellipse cx="400" cy="400" rx="270" ry="24" fill="url(#a-shadow)"/>
+  <!-- network -->
+  <g stroke="#67e8f9" stroke-opacity="0.5" stroke-width="3">
+    <line x1="150" y1="140" x2="330" y2="200"/>
+    <line x1="650" y1="140" x2="470" y2="200"/>
+    <line x1="150" y1="320" x2="330" y2="280"/>
+    <line x1="650" y1="320" x2="470" y2="280"/>
+    <line x1="330" y1="200" x2="330" y2="280"/>
+    <line x1="470" y1="200" x2="470" y2="280"/>
+  </g>
+  <g>
+    <circle cx="150" cy="140" r="26" fill="url(#a-node)"/>
+    <circle cx="650" cy="140" r="26" fill="url(#a-node)"/>
+    <circle cx="150" cy="320" r="26" fill="url(#a-node)"/>
+    <circle cx="650" cy="320" r="26" fill="url(#a-node)"/>
+    <circle cx="150" cy="140" r="10" fill="#ffffff" opacity="0.8"/>
+    <circle cx="650" cy="140" r="10" fill="#ffffff" opacity="0.8"/>
+    <circle cx="150" cy="320" r="10" fill="#ffffff" opacity="0.8"/>
+    <circle cx="650" cy="320" r="10" fill="#ffffff" opacity="0.8"/>
+  </g>
+  <!-- big 3D key -->
+  <g transform="rotate(-12 400 240)">
+    <circle cx="330" cy="240" r="52" fill="none" stroke="url(#a-key)" stroke-width="26"/>
+    <circle cx="330" cy="240" r="52" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.6"/>
+    <rect x="376" y="226" width="140" height="28" rx="14" fill="url(#a-key)"/>
+    <rect x="450" y="254" width="20" height="30" rx="6" fill="url(#a-key)"/>
+    <rect x="486" y="254" width="20" height="30" rx="6" fill="url(#a-key)"/>
+  </g>
+  <g font-family="monospace" font-size="20" font-weight="bold">
+    <rect x="300" y="330" width="200" height="42" rx="10" fill="#041a3a" stroke="#67e8f9" stroke-width="2"/>
+    <text x="400" y="358" text-anchor="middle" fill="#67e8f9">X-API-Key ✓</text>
+  </g>
+  <circle cx="250" cy="90" r="8" fill="#a78bfa"/>
+  <circle cx="560" cy="90" r="7" fill="#67e8f9"/>
+</svg>

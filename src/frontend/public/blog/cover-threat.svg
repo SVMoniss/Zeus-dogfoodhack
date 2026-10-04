@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-label="3D threat radar cover">
+  <defs>
+    <linearGradient id="t-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b0f1a"/>
+      <stop offset="1" stop-color="#3f3f46"/>
+    </linearGradient>
+    <linearGradient id="t-cone" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f87171" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#f87171" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="t-cube-t" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fca5a5"/>
+      <stop offset="1" stop-color="#ef4444"/>
+    </linearGradient>
+    <radialGradient id="t-shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000000" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="800" height="450" fill="url(#t-bg)"/>
+  <g stroke="#71717a" stroke-opacity="0.35">
+    <path d="M0 90 H800 M0 180 H800 M0 270 H800 M0 360 H800"/>
+    <path d="M150 0 V450 M300 0 V450 M450 0 V450 M600 0 V450 M720 0 V450"/>
+  </g>
+  <ellipse cx="400" cy="400" rx="260" ry="22" fill="url(#t-shadow)"/>
+  <!-- radar -->
+  <g>
+    <circle cx="400" cy="240" r="130" fill="none" stroke="#f87171" stroke-width="3" opacity="0.7"/>
+    <circle cx="400" cy="240" r="88" fill="none" stroke="#f87171" stroke-width="2" opacity="0.5"/>
+    <circle cx="400" cy="240" r="46" fill="none" stroke="#f87171" stroke-width="2" opacity="0.5"/>
+    <polygon points="400,240 530,240 530,150 400,240" fill="url(#t-cone)"/>
+    <line x1="400" y1="240" x2="520" y2="170" stroke="#fecaca" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="400" cy="240" r="10" fill="#f87171"/>
+    <circle cx="350" cy="200" r="9" fill="#fbbf24"/>
+    <circle cx="450" cy="290" r="7" fill="#fbbf24"/>
+    <circle cx="440" cy="190" r="6" fill="#fecaca"/>
+  </g>
+  <!-- accepted-risk cube -->
+  <g>
+    <polygon points="620,300 680,330 620,360 560,330" fill="url(#t-cube-t)"/>
+    <polygon points="560,330 620,360 620,410 560,380" fill="#7f1d1d"/>
+    <polygon points="620,360 680,330 680,380 620,410" fill="#450a0a"/>
+  </g>
+  <g font-family="monospace" font-size="22" font-weight="bold">
+    <rect x="120" y="70" width="200" height="44" rx="10" fill="#18181b" stroke="#f87171" stroke-width="2"/>
+    <text x="220" y="100" text-anchor="middle" fill="#fca5a5">accepted ✓</text>
+  </g>
+  <circle cx="150" cy="350" r="9" fill="#f87171"/>
+  <circle cx="680" cy="90" r="8" fill="#fbbf24"/>
+</svg>

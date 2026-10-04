@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, ArrowUpRight, CalendarDays, Clock } from 'lucide-react';
 import AppShell from '@/components/AppShell';
+import { TrophyMark } from '@/components/Brand';
 import { BLOG_POSTS, getPost, getRelated } from '@/lib/blog';
 
 export function generateStaticParams() {
@@ -32,19 +33,19 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
 
         <div
           aria-hidden="true"
-          className={`relative mt-6 overflow-hidden rounded-[0.625rem] bg-gradient-to-br ${post.gradient}`}
+          className="relative mt-6 overflow-hidden rounded-[0.625rem]"
         >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={post.image}
+            alt=""
+            className="h-64 w-full object-cover sm:h-80"
+          />
           <div
             aria-hidden="true"
-            className="absolute inset-0 opacity-20"
-            style={{
-              backgroundImage:
-                'linear-gradient(to right, rgba(255,255,255,.5) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.5) 1px, transparent 1px)',
-              backgroundSize: '36px 36px',
-              maskImage: 'radial-gradient(ellipse 90% 80% at 50% 0%, black 30%, transparent 78%)',
-            }}
+            className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent"
           />
-          <div className="relative px-6 py-12 sm:px-10 sm:py-16">
+          <div className="absolute inset-x-0 bottom-0 px-6 py-8 sm:px-10">
             <p className="flex flex-wrap items-center gap-2 text-sm text-white/85">
               <span className="badge border-white/30 bg-white/15 text-white">{post.category}</span>
               <span className="flex items-center gap-1.5">

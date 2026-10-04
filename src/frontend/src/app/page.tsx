@@ -413,7 +413,13 @@ export default function HomePage() {
         <div className="mt-10 grid gap-5 md:grid-cols-3">
           {BLOG_POSTS.slice(0, 3).map((p) => (
             <Link key={p.slug} href={`/blog/${p.slug}`} className="listing-card group flex flex-col">
-              <div aria-hidden="true" className={`relative h-32 bg-gradient-to-br ${p.gradient}`}>
+              <div aria-hidden="true" className="relative h-32 overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={p.image}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
                 <span className="ribbon bg-black/45">{p.category}</span>
               </div>
               <div className="flex flex-1 flex-col p-5">

@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-label="3D shield lock cover">
+  <defs>
+    <linearGradient id="i-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#041e1a"/>
+      <stop offset="1" stop-color="#065f46"/>
+    </linearGradient>
+    <linearGradient id="i-shield" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#a7f3d0"/>
+      <stop offset="0.5" stop-color="#34d399"/>
+      <stop offset="1" stop-color="#065f46"/>
+    </linearGradient>
+    <linearGradient id="i-dark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#134e4a"/>
+      <stop offset="1" stop-color="#042f2e"/>
+    </linearGradient>
+    <radialGradient id="i-shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000000" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="i-orb" cx="0.35" cy="0.3" r="0.9">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.4" stop-color="#a7f3d0"/>
+      <stop offset="1" stop-color="#059669"/>
+    </radialGradient>
+  </defs>
+  <rect width="800" height="450" fill="url(#i-bg)"/>
+  <g stroke="#34d399" stroke-opacity="0.15">
+    <path d="M0 90 H800 M0 180 H800 M0 270 H800 M0 360 H800"/>
+    <path d="M150 0 V450 M300 0 V450 M450 0 V450 M600 0 V450"/>
+  </g>
+  <circle cx="680" cy="360" r="110" fill="#34d399" opacity="0.10"/>
+  <ellipse cx="400" cy="400" rx="240" ry="24" fill="url(#i-shadow)"/>
+  <!-- shield -->
+  <g>
+    <path d="M400 80 L540 130 V250 C540 330 470 375 400 395 C330 375 260 330 260 250 V130 Z" fill="url(#i-shield)"/>
+    <path d="M400 105 L515 148 V250 C515 315 455 355 400 372 C345 355 285 315 285 250 V148 Z" fill="url(#i-dark)"/>
+    <rect x="372" y="220" width="56" height="48" rx="10" fill="#34d399"/>
+    <circle cx="400" cy="238" r="10" fill="#042f2e"/>
+    <rect x="396" y="238" width="8" height="20" rx="4" fill="#042f2e"/>
+    <path d="M400 80 L540 130 V160 L400 110 Z" fill="#ffffff" opacity="0.35"/>
+  </g>
+  <!-- denied badges -->
+  <g font-family="monospace" font-size="24" font-weight="bold">
+    <rect x="120" y="140" width="120" height="48" rx="12" fill="#042f2e" stroke="#f87171" stroke-width="3"/>
+    <text x="180" y="172" text-anchor="middle" fill="#f87171">403</text>
+    <rect x="560" y="140" width="120" height="48" rx="12" fill="#042f2e" stroke="#f87171" stroke-width="3"/>
+    <text x="620" y="172" text-anchor="middle" fill="#f87171">403</text>
+  </g>
+  <circle cx="170" cy="320" r="26" fill="url(#i-orb)"/>
+  <ellipse cx="161" cy="311" rx="8" ry="5" fill="#ffffff" opacity="0.85"/>
+  <circle cx="640" cy="320" r="16" fill="url(#i-orb)"/>
+  <circle cx="250" cy="80" r="8" fill="#a7f3d0"/>
+  <circle cx="560" cy="70" r="7" fill="#34d399"/>
+</svg>

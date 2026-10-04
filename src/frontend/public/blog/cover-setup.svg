@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-label="3D container stack cover">
+  <defs>
+    <linearGradient id="s-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#062033"/>
+      <stop offset="1" stop-color="#0A4A5E"/>
+    </linearGradient>
+    <linearGradient id="s-top" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#67e8f9"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+    <linearGradient id="s-left" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0e7490"/>
+      <stop offset="1" stop-color="#155e75"/>
+    </linearGradient>
+    <linearGradient id="s-right" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#164e63"/>
+      <stop offset="1" stop-color="#083344"/>
+    </linearGradient>
+    <linearGradient id="s-lime" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d9f99d"/>
+      <stop offset="1" stop-color="#a3e635"/>
+    </linearGradient>
+    <radialGradient id="s-shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000000" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="s-ball" cx="0.35" cy="0.3" r="0.9">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.35" stop-color="#a5f3fc"/>
+      <stop offset="1" stop-color="#0891b2"/>
+    </radialGradient>
+  </defs>
+  <rect width="800" height="450" fill="url(#s-bg)"/>
+  <g stroke="#22d3ee" stroke-opacity="0.18" stroke-width="1">
+    <path d="M0 380 L800 380"/>
+    <path d="M0 410 L800 410"/>
+    <path d="M120 450 L300 300 M300 450 L430 300 M480 450 L610 300 M660 450 L740 300"/>
+  </g>
+  <circle cx="660" cy="90" r="130" fill="#22d3ee" opacity="0.12"/>
+  <circle cx="120" cy="360" r="90" fill="#a3e635" opacity="0.10"/>
+  <ellipse cx="400" cy="392" rx="250" ry="26" fill="url(#s-shadow)"/>
+  <!-- big container cube -->
+  <g>
+    <polygon points="400,180 520,240 400,300 280,240" fill="url(#s-top)"/>
+    <polygon points="280,240 400,300 400,400 280,340" fill="url(#s-left)"/>
+    <polygon points="400,300 520,240 520,340 400,400" fill="url(#s-right)"/>
+    <polygon points="400,180 520,240 400,300 280,240" fill="none" stroke="#ecfeff" stroke-width="3" opacity="0.7"/>
+    <line x1="340" y1="270" x2="340" y2="370" stroke="#ecfeff" stroke-width="2" opacity="0.35"/>
+    <line x1="400" y1="300" x2="400" y2="400" stroke="#ecfeff" stroke-width="2" opacity="0.35"/>
+    <line x1="460" y1="270" x2="460" y2="370" stroke="#ecfeff" stroke-width="2" opacity="0.35"/>
+  </g>
+  <!-- small lime cube -->
+  <g>
+    <polygon points="610,270 670,300 610,330 550,300" fill="url(#s-lime)"/>
+    <polygon points="550,300 610,330 610,390 550,360" fill="#4d7c0f"/>
+    <polygon points="610,330 670,300 670,360 610,390" fill="#365314"/>
+  </g>
+  <!-- floating spheres -->
+  <circle cx="180" cy="150" r="34" fill="url(#s-ball)"/>
+  <ellipse cx="168" cy="138" rx="10" ry="7" fill="#ffffff" opacity="0.85"/>
+  <circle cx="640" cy="150" r="18" fill="url(#s-ball)"/>
+  <circle cx="250" cy="90" r="10" fill="#a3e635" opacity="0.9"/>
+  <circle cx="560" cy="80" r="7" fill="#67e8f9" opacity="0.9"/>
+  <rect x="60" y="60" width="150" height="14" rx="7" fill="#22d3ee" opacity="0.5"/>
+  <rect x="60" y="84" width="100" height="14" rx="7" fill="#a3e635" opacity="0.45"/>
+</svg>
