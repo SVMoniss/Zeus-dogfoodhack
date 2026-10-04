@@ -113,3 +113,5 @@ plan_temp.md
 
 # Provided input (organizer spec, not project code)
 spec/
+# act (local GitHub Actions runs) secrets
+.secrets

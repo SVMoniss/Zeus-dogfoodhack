@@ -68,7 +68,40 @@ web `https://<name>.azurestaticapps.net`.
   `docker compose up` + checker for acceptance; Azure is the public play link.
 - **Logs**: `az containerapp logs show -n dogfood-api -g dogfood-rg --follow`.
 
-## 3. Costs & limits to respect
+## 3. Running the workflow locally with `act`
+
+[`act`](https://github.com/nektos/act) runs the same YAML in local Docker
+containers — nothing to change in the workflow:
+
+```powershell
+winget install nektos.act
+```
+
+Create a `.secrets` file (gitignored, never commit):
+
+```
+NEON_DATABASE_URL=postgresql://user:pass@ep-xxx.aws.neon.tech/dogfood?sslmode=require
+AZURE_SECRET_KEY=<output of openssl rand -hex 32, keep stable>
+AZURE_CREDENTIALS={"clientId":"...","clientSecret":"...","subscriptionId":"...","tenantId":"..."}
+GITHUB_TOKEN=<PAT with packages:write, for the ghcr.io push>
+```
+
+- `AZURE_CREDENTIALS` comes from
+  `az ad sp create-for-rbac --sdk-auth --role Contributor --scopes
+  /subscriptions/<sub>/resourceGroups/dogfood-rg`. When present, the workflow
+  uses it and skips federated login (which has no OIDC token under `act`).
+- `GITHUB_TOKEN` under `act` is a dummy, so override it with a real PAT.
+- First run downloads the ~2 GB runner image; subsequent runs are fast.
+
+```powershell
+act workflow_dispatch -W .github/workflows/azure-deploy.yml --secret-file .secrets
+```
+
+It deploys to **real** Azure (free tiers/grant apply) — local execution,
+real infrastructure. The manual `az`/`docker` equivalent is in the chat
+history if you prefer step-by-step control.
+
+## 4. Costs & limits to respect
 
 - Container Apps: stays in the free grant while `maxReplicas: 1` + scale-to-zero;
   watch the grant in Cost Management.

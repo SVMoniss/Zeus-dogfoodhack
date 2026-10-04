@@ -34,6 +34,11 @@ def wants_ssl(raw_url: str) -> bool:
     return any(host.endswith(suffix) for suffix in _MANAGED_SUFFIXES)
 
 
+# Query params understood by libpq/psycopg2 but NOT by asyncpg. They are
+# stripped from async URLs (TLS state is carried by connect_args instead).
+_ASYNC_DROP_PARAMS = ("sslmode", "channel_binding", "sslcert", "sslkey", "sslrootcert")
+
+
 def _with_driver(raw_url: str, driver: str) -> str:
     """Qualify a bare postgres(s):// URL with the given SQLAlchemy driver."""
     if "://" not in raw_url:
@@ -45,9 +50,9 @@ def _with_driver(raw_url: str, driver: str) -> str:
 
 
 def async_database_url(raw_url: str) -> str:
-    """Driver-qualified URL for asyncpg (``?sslmode=`` stripped)."""
+    """Driver-qualified URL for asyncpg (libpq-only params stripped)."""
     parts = urlsplit(_with_driver(raw_url, "postgresql+asyncpg"))
-    query = [(k, v) for k, v in parse_qsl(parts.query) if k.lower() != "sslmode"]
+    query = [(k, v) for k, v in parse_qsl(parts.query) if k.lower() not in _ASYNC_DROP_PARAMS]
     return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment))
 
 

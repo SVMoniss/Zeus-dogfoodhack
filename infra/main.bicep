@@ -12,6 +12,9 @@ targetScope = 'resourceGroup'
 @description('Azure region for all resources.')
 param location string = resourceGroup().location
 
+@description('Region for the Static Web App (not offered in every region).')
+param swaLocation string = 'eastasia'
+
 @description('Prefix for resource names (lowercase, alphanumeric).')
 param baseName string = 'dogfood'
 
@@ -35,7 +38,7 @@ var logName = '${baseName}-logs'
 // is derived from its default hostname, so Bicep orders this correctly.
 resource staticSite 'Microsoft.Web/staticSites@2023-12-01' = {
   name: swaName
-  location: location
+  location: swaLocation
   sku: {
     name: 'Free'
     tier: 'Free'
@@ -160,4 +163,5 @@ output backendFqdn string = 'https://${backend.properties.configuration.ingress.
 output swaHostname string = staticSite.properties.defaultHostname
 
 @description('Deployment token for the Static Web Apps GitHub Action.')
+#disable-next-line outputs-should-not-contain-secrets // SWA token is consumed by the deploy workflow, not stored
 output swaApiToken string = staticSite.listSecrets().properties.apiKey
