@@ -77,13 +77,16 @@ async def login(
     access_token = create_access_token({"sub": str(user.id), "role": user.role.value})
     refresh_token = create_refresh_token({"sub": str(user.id)})
     
-    # Set httpOnly cookie for session compatibility
+    # Set httpOnly cookie for session compatibility.
+    # Local compose: secure=False, samesite="lax". Cross-site HTTPS deploys
+    # need COOKIE_SECURE=true + COOKIE_SAMESITE=none (browsers reject
+    # SameSite=None without Secure).
     response.set_cookie(
         key="session",
         value=access_token,
         httponly=True,
-        secure=False,  # Set to True in production with HTTPS
-        samesite="lax",
+        secure=settings.COOKIE_SECURE,
+        samesite=settings.COOKIE_SAMESITE,
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
     

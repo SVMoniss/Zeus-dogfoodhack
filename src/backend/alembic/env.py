@@ -19,12 +19,14 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Set the database URL from environment (use sync driver for alembic)
+# Set the database URL from environment (use sync driver for alembic).
+# sync_database_url() qualifies bare postgresql:// URLs with psycopg2 and
+# keeps/adds ?sslmode=require for managed providers (Neon/Supabase).
 database_url = os.getenv("DATABASE_URL")
 if database_url:
-    # Convert asyncpg to psycopg2 for alembic
-    sync_url = database_url.replace("postgresql+asyncpg://", "postgresql+psycopg2://")
-    config.set_main_option("sqlalchemy.url", sync_url)
+    from app.core.db_url import sync_database_url
+
+    config.set_main_option("sqlalchemy.url", sync_database_url(database_url))
 
 target_metadata = Base.metadata
 

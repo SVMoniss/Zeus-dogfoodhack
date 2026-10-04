@@ -14,6 +14,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import inspect, select
 
 from app.core.config import settings
+from app.core.db_url import async_connect_args, async_database_url
 from app.core.database import Base
 from app.models import (
     User, Event, Track, Team, TeamMember, Project,
@@ -61,7 +62,11 @@ async def get_or_create(model, db, **kwargs):
 
 
 async def seed():
-    engine = create_async_engine(settings.DATABASE_URL, echo=False)
+    engine = create_async_engine(
+        async_database_url(settings.DATABASE_URL),
+        connect_args=async_connect_args(settings.DATABASE_URL),
+        echo=False,
+    )
     AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     
     async with engine.connect() as conn:
