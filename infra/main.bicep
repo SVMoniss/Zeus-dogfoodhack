@@ -173,6 +173,12 @@ resource backend 'Microsoft.App/containerApps@2024-03-01' = {
               name: 'PYTHONPATH'
               value: '/app'
             }
+            {
+              // Bump to force a fresh revision (failed-provisioning revisions
+              // cannot be restarted via the API).
+              name: 'DEPLOY_ID'
+              value: 'v2'
+            }
           ]
         }
       ]
