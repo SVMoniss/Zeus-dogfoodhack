@@ -15,6 +15,15 @@ param location string = resourceGroup().location
 @description('Region for the Static Web App (not offered in every region).')
 param swaLocation string = 'eastasia'
 
+@description('GHCR username for private image pulls. Empty = anonymous pull (public image).')
+param registryUser string = ''
+
+@description('GHCR PAT (classic, read:packages minimum). Required when registryUser is set.')
+@secure()
+param registryPassword string = ''
+
+var useRegistryAuth = registryUser != ''
+
 @description('Prefix for resource names (lowercase, alphanumeric).')
 param baseName string = 'dogfood'
 
@@ -90,16 +99,35 @@ resource backend 'Microsoft.App/containerApps@2024-03-01' = {
         transport: 'auto'
         allowInsecure: false
       }
-      secrets: [
-        {
-          name: 'database-url'
-          value: databaseUrl
-        }
-        {
-          name: 'secret-key'
-          value: secretKey
-        }
-      ]
+      secrets: concat(
+        [
+          {
+            name: 'database-url'
+            value: databaseUrl
+          }
+          {
+            name: 'secret-key'
+            value: secretKey
+          }
+        ],
+        useRegistryAuth
+          ? [
+              {
+                name: 'registry-password'
+                value: registryPassword
+              }
+            ]
+          : []
+      )
+      registries: useRegistryAuth
+        ? [
+            {
+              server: 'ghcr.io'
+              username: registryUser
+              passwordSecretRef: 'registry-password'
+            }
+          ]
+        : []
     }
     template: {
       containers: [
